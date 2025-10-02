@@ -224,7 +224,7 @@ builder.Logging.AddDebug();
 
 if (!builder.Environment.IsDevelopment())
 {
-    builder.Logging.AddEventLog();
+  //  builder.Logging.AddEventLog();
 }
 
 var app = builder.Build();
