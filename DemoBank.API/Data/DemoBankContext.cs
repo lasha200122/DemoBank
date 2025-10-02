@@ -113,18 +113,6 @@ public class DemoBankContext : DbContext
 
             entity.Property(e => e.ExchangeRateToUSD)
                 .HasColumnType("decimal(18,6)");
-
-            // Seed initial currencies
-            entity.HasData(
-                new Currency { Id = 1, Code = "USD", Name = "US Dollar", Symbol = "$", ExchangeRateToUSD = 1.00m, LastUpdated = DateTime.UtcNow },
-                new Currency { Id = 2, Code = "EUR", Name = "Euro", Symbol = "€", ExchangeRateToUSD = 0.85m, LastUpdated = DateTime.UtcNow },
-                new Currency { Id = 3, Code = "GBP", Name = "British Pound", Symbol = "£", ExchangeRateToUSD = 0.73m, LastUpdated = DateTime.UtcNow },
-                new Currency { Id = 4, Code = "JPY", Name = "Japanese Yen", Symbol = "¥", ExchangeRateToUSD = 110.50m, LastUpdated = DateTime.UtcNow },
-                new Currency { Id = 5, Code = "CAD", Name = "Canadian Dollar", Symbol = "C$", ExchangeRateToUSD = 1.25m, LastUpdated = DateTime.UtcNow },
-                new Currency { Id = 6, Code = "AUD", Name = "Australian Dollar", Symbol = "A$", ExchangeRateToUSD = 1.35m, LastUpdated = DateTime.UtcNow },
-                new Currency { Id = 7, Code = "CHF", Name = "Swiss Franc", Symbol = "CHF", ExchangeRateToUSD = 0.92m, LastUpdated = DateTime.UtcNow },
-                new Currency { Id = 8, Code = "CNY", Name = "Chinese Yuan", Symbol = "¥", ExchangeRateToUSD = 6.45m, LastUpdated = DateTime.UtcNow }
-            );
         });
 
         // Loan configuration

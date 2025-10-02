@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DemoBank.API.Migrations
 {
     [DbContext(typeof(DemoBankContext))]
-    [Migration("20251002153041_InitDB")]
-    partial class InitDB
+    [Migration("20251002154236_InitDB2")]
+    partial class InitDB2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -111,88 +111,6 @@ namespace DemoBank.API.Migrations
                         .IsUnique();
 
                     b.ToTable("Currencies");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Code = "USD",
-                            ExchangeRateToUSD = 1.00m,
-                            IsActive = true,
-                            LastUpdated = new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9240),
-                            Name = "US Dollar",
-                            Symbol = "$"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Code = "EUR",
-                            ExchangeRateToUSD = 0.85m,
-                            IsActive = true,
-                            LastUpdated = new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9328),
-                            Name = "Euro",
-                            Symbol = "€"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Code = "GBP",
-                            ExchangeRateToUSD = 0.73m,
-                            IsActive = true,
-                            LastUpdated = new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9330),
-                            Name = "British Pound",
-                            Symbol = "£"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Code = "JPY",
-                            ExchangeRateToUSD = 110.50m,
-                            IsActive = true,
-                            LastUpdated = new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9331),
-                            Name = "Japanese Yen",
-                            Symbol = "¥"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Code = "CAD",
-                            ExchangeRateToUSD = 1.25m,
-                            IsActive = true,
-                            LastUpdated = new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9332),
-                            Name = "Canadian Dollar",
-                            Symbol = "C$"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Code = "AUD",
-                            ExchangeRateToUSD = 1.35m,
-                            IsActive = true,
-                            LastUpdated = new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9333),
-                            Name = "Australian Dollar",
-                            Symbol = "A$"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Code = "CHF",
-                            ExchangeRateToUSD = 0.92m,
-                            IsActive = true,
-                            LastUpdated = new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9334),
-                            Name = "Swiss Franc",
-                            Symbol = "CHF"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Code = "CNY",
-                            ExchangeRateToUSD = 6.45m,
-                            IsActive = true,
-                            LastUpdated = new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9335),
-                            Name = "Chinese Yuan",
-                            Symbol = "¥"
-                        });
                 });
 
             modelBuilder.Entity("DemoBank.Core.Models.ExchangeRateAlert", b =>

@@ -229,24 +229,15 @@ if (!builder.Environment.IsDevelopment())
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "DemoBank API V1");
-        c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
-        c.DocumentTitle = "DemoBank API Documentation";
-        c.DisplayRequestDuration();
-    });
-}
-else
-{
-    // Production error handling
-    app.UseExceptionHandler("/error");
-    app.UseHsts();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "DemoBank API V1");
+    c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
+    c.DocumentTitle = "DemoBank API Documentation";
+    c.DisplayRequestDuration();
+});
 
 // Global error handling middleware
 app.Use(async (context, next) =>
@@ -281,17 +272,6 @@ app.UseResponseCompression();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Map health check endpoints
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-{
-    Predicate = check => check.Tags.Contains("ready")
-});
-app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
-{
-    Predicate = _ => false
-});
 
 app.MapControllers();
 

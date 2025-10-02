@@ -4,12 +4,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace DemoBank.API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDB : Migration
+    public partial class InitDB2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -307,21 +305,6 @@ namespace DemoBank.API.Migrations
                         principalTable: "Loans",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.InsertData(
-                table: "Currencies",
-                columns: new[] { "Id", "Code", "ExchangeRateToUSD", "IsActive", "LastUpdated", "Name", "Symbol" },
-                values: new object[,]
-                {
-                    { 1, "USD", 1.00m, true, new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9240), "US Dollar", "$" },
-                    { 2, "EUR", 0.85m, true, new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9328), "Euro", "€" },
-                    { 3, "GBP", 0.73m, true, new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9330), "British Pound", "£" },
-                    { 4, "JPY", 110.50m, true, new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9331), "Japanese Yen", "¥" },
-                    { 5, "CAD", 1.25m, true, new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9332), "Canadian Dollar", "C$" },
-                    { 6, "AUD", 1.35m, true, new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9333), "Australian Dollar", "A$" },
-                    { 7, "CHF", 0.92m, true, new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9334), "Swiss Franc", "CHF" },
-                    { 8, "CNY", 6.45m, true, new DateTime(2025, 10, 2, 15, 30, 40, 802, DateTimeKind.Utc).AddTicks(9335), "Chinese Yuan", "¥" }
                 });
 
             migrationBuilder.CreateIndex(
