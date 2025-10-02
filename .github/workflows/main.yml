@@ -19,7 +19,7 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: Dotnet Publish
-      run: dotnet publish DemoBank.Api -c Release -o deploy-web -r linux-x64
+      run: dotnet publish DemoBank.API -c Release -o deploy-web -r linux-x64
 
     - name: Install SSH Key
       uses: shimataro/ssh-key-action@v2
