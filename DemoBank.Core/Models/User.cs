@@ -1,0 +1,48 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Principal;
+
+namespace DemoBank.Core.Models;
+
+public class User
+{
+    public Guid Id { get; set; }
+
+    [Required]
+    [MaxLength(100)]
+    public string Username { get; set; }
+
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; }
+
+    [Required]
+    public string PasswordHash { get; set; }
+
+    [Required]
+    [MaxLength(50)]
+    public string FirstName { get; set; }
+
+    [Required]
+    [MaxLength(50)]
+    public string LastName { get; set; }
+
+    [Phone]
+    public string PhoneNumber { get; set; }
+
+    public UserRole Role { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    // Navigation properties
+    public virtual ICollection<Account> Accounts { get; set; }
+    public virtual ICollection<Loan> Loans { get; set; }
+    public virtual ICollection<Notification> Notifications { get; set; }
+    public virtual UserSettings Settings { get; set; }
+}
+
+public enum UserRole
+{
+    Client,
+    Admin
+}
