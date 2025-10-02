@@ -4,6 +4,7 @@ using DemoBank.API.Helpers;
 using DemoBank.API.Services;
 using DemoBank.Core.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -14,14 +15,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Configure Swagger/OpenAPI
+// Configure Swagger/OpenAPI with enhanced documentation
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "DemoBank API",
         Version = "v1",
-        Description = "A simple banking system API"
+        Description = "A comprehensive banking system API with advanced features",
+        Contact = new OpenApiContact
+        {
+            Name = "DemoBank Support",
+            Email = "support@demobank.com",
+            Url = new Uri("https://demobank.com/support")
+        }
     });
 
     // Add JWT Authentication to Swagger
@@ -48,11 +55,32 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    // Group endpoints by feature
+    c.TagActionsBy(api => new[] { api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] });
+    c.DocInclusionPredicate((name, api) => true);
 });
 
-// Configure PostgreSQL Database
+// Configure PostgreSQL Database with connection resilience
 builder.Services.AddDbContext<DemoBankContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorCodesToAdd: null);
+        });
+
+    // Enable detailed errors in development
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableDetailedErrors();
+        options.EnableSensitiveDataLogging();
+    }
+});
 
 // Configure JWT Settings
 var jwtSettings = new JwtSettings();
@@ -67,7 +95,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -81,43 +109,123 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
+
+    // Add JWT bearer events for logging
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
+        {
+            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+            {
+                context.Response.Headers.Add("Token-Expired", "true");
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
-// Configure Authorization
+// Configure Authorization with multiple policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("ClientOnly", policy => policy.RequireRole("Client"));
     options.AddPolicy("AdminOrClient", policy => policy.RequireRole("Admin", "Client"));
+    options.AddPolicy("RequireTwoFactor", policy => policy.RequireClaim("TwoFactorEnabled", "true"));
 });
 
-// Configure CORS
+// Configure CORS with specific origins in production
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder =>
+    options.AddPolicy("AllowSpecificOrigins",
+        corsBuilder =>
         {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
+            if (builder.Environment.IsDevelopment())
+            {
+                corsBuilder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+            }
+            else
+            {
+                corsBuilder.WithOrigins(
+                    "https://demobank.com",
+                    "https://app.demobank.com")
+                    .AllowCredentials()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            }
         });
 });
 
-// Add Memory Cache
+// Add Caching Services
 builder.Services.AddMemoryCache();
+builder.Services.AddDistributedMemoryCache(); // Use Redis in production
+builder.Services.AddResponseCaching();
 
-// Register Services
+// Register Core Services
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationHelper, NotificationHelper>();
+
+// Register Account & Transaction Services
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ITransferService, TransferService>();
+
+// Register Financial Services
 builder.Services.AddScoped<IExchangeService, ExchangeService>();
+builder.Services.AddScoped<ILoanService, LoanService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+// Register Enhanced Services
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+
+// Register Background Services
+builder.Services.AddHostedService<NotificationBackgroundService>();
 
 // Add AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// Add HTTP Context Accessor
+builder.Services.AddHttpContextAccessor();
+
+// Configure API Behavior
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .SelectMany(x => x.Value.Errors)
+            .Select(x => x.ErrorMessage)
+            .ToList();
+
+        return new BadRequestObjectResult(new
+        {
+            Success = false,
+            Message = "Validation failed",
+            Errors = errors
+        });
+    };
+});
+
+// Add Compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
+// Configure Logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.AddEventLog();
+}
 
 var app = builder.Build();
 
@@ -129,31 +237,110 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "DemoBank API V1");
         c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
+        c.DocumentTitle = "DemoBank API Documentation";
+        c.DisplayRequestDuration();
     });
 }
+else
+{
+    // Production error handling
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+}
+
+// Global error handling middleware
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Unhandled exception occurred");
+
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            Success = false,
+            Message = "An unexpected error occurred",
+            Error = app.Environment.IsDevelopment() ? ex.ToString() : null
+        });
+    }
+});
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+app.UseCors("AllowSpecificOrigins");
+
+// Add response caching
+app.UseResponseCaching();
+
+// Add response compression
+app.UseResponseCompression();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map health check endpoints
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+});
+
 app.MapControllers();
 
 // Create database if it doesn't exist and apply migrations
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<DemoBankContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
     try
     {
-        dbContext.Database.Migrate();
-        Console.WriteLine("Database migrated successfully.");
+        // Apply migrations
+        if (dbContext.Database.GetPendingMigrations().Any())
+        {
+            logger.LogInformation("Applying database migrations...");
+            dbContext.Database.Migrate();
+            logger.LogInformation("Database migrations applied successfully.");
+        }
+        else
+        {
+            logger.LogInformation("Database is up to date.");
+        }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Database migration failed: {ex.Message}");
+        logger.LogError(ex, "Database migration failed");
+
+        if (!app.Environment.IsDevelopment())
+        {
+            throw; // Re-throw in production to prevent startup with failed database
+        }
     }
 }
 
 // Seed the database
-await app.SeedDatabaseAsync();
+try
+{
+    await app.SeedDatabaseAsync();
+    app.Logger.LogInformation("Database seeded successfully");
+}
+catch (Exception ex)
+{
+    app.Logger.LogError(ex, "Database seeding failed");
+}
+
+// Log application startup information
+app.Logger.LogInformation($"DemoBank API started successfully");
+app.Logger.LogInformation($"Environment: {app.Environment.EnvironmentName}");
+app.Logger.LogInformation($"Database Provider: PostgreSQL");
+app.Logger.LogInformation($"Swagger UI: {(app.Environment.IsDevelopment() ? "Enabled at /" : "Disabled")}");
 
 app.Run();
