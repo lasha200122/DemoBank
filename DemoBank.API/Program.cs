@@ -148,7 +148,7 @@ builder.Services.AddCors(options =>
             else
             {
                 corsBuilder.WithOrigins(
-                    "https://bank.techmsg.dev")
+                    "https://bank.techmsg.dev", "http://localhost:4200")
                     .AllowCredentials()
                     .AllowAnyMethod()
                     .AllowAnyHeader();
