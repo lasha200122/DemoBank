@@ -567,30 +567,6 @@ public class LoanService : ILoanService
             Reasons = new List<string>()
         };
 
-        // Check account age (minimum 3 months)
-        var accountAge = DateTime.UtcNow - user.CreatedAt;
-        if (accountAge.TotalDays < 90)
-        {
-            eligibility.IsEligible = false;
-            eligibility.Reasons.Add("Account must be at least 3 months old");
-        }
-
-        // Check for active loans
-        var activeLoans = user.Loans.Where(l => l.Status == LoanStatus.Active).ToList();
-        if (activeLoans.Count >= 2)
-        {
-            eligibility.IsEligible = false;
-            eligibility.Reasons.Add("Maximum of 2 active loans allowed");
-        }
-
-        // Check total debt
-        var totalDebt = activeLoans.Sum(l => l.RemainingBalance);
-        if (totalDebt + requestedAmount > MAX_LOAN_AMOUNT)
-        {
-            eligibility.IsEligible = false;
-            eligibility.MaxEligibleAmount = MAX_LOAN_AMOUNT - totalDebt;
-            eligibility.Reasons.Add($"Total debt would exceed maximum of ${MAX_LOAN_AMOUNT:N0}");
-        }
 
         // Check account balance (minimum $100 in any account)
         var totalBalance = user.Accounts.Where(a => a.IsActive).Sum(a => a.Balance);
