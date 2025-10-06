@@ -1,32 +1,24 @@
 ﻿using DemoBank.API.Data;
 using DemoBank.Core.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace DemoBank.API.Services;
 
 public class CurrencyService : ICurrencyService
 {
     private readonly DemoBankContext _context;
-    private readonly IMemoryCache _cache;
-    private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(15);
 
-    public CurrencyService(DemoBankContext context, IMemoryCache cache)
+    public CurrencyService(DemoBankContext context)
     {
         _context = context;
-        _cache = cache;
     }
 
     public async Task<List<Currency>> GetAllCurrenciesAsync()
     {
-        return await _cache.GetOrCreateAsync("all_currencies", async entry =>
-        {
-            entry.SlidingExpiration = _cacheExpiration;
-            return await _context.Currencies
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.Code)
-                .ToListAsync();
-        });
+        return await _context.Currencies
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.Code)
+            .ToListAsync();
     }
 
     public async Task<Currency> GetCurrencyAsync(string code)
@@ -34,13 +26,8 @@ public class CurrencyService : ICurrencyService
         if (string.IsNullOrEmpty(code))
             return null;
 
-        var cacheKey = $"currency_{code.ToUpper()}";
-        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SlidingExpiration = _cacheExpiration;
-            return await _context.Currencies
-                .FirstOrDefaultAsync(c => c.Code == code.ToUpper() && c.IsActive);
-        });
+        return await _context.Currencies
+            .FirstOrDefaultAsync(c => c.Code == code.ToUpper() && c.IsActive);
     }
 
     public async Task<decimal> GetExchangeRateAsync(string fromCurrency, string toCurrency)
@@ -89,35 +76,22 @@ public class CurrencyService : ICurrencyService
         _context.Currencies.Update(currency);
         var result = await _context.SaveChangesAsync() > 0;
 
-        if (result)
-        {
-            // Clear cache
-            _cache.Remove($"currency_{currencyCode.ToUpper()}");
-            _cache.Remove("all_currencies");
-            _cache.Remove("all_exchange_rates");
-        }
-
         return result;
     }
 
     public async Task<Dictionary<string, decimal>> GetAllExchangeRatesAsync()
     {
-        return await _cache.GetOrCreateAsync("all_exchange_rates", async entry =>
+        var currencies = await GetAllCurrenciesAsync();
+        var rates = new Dictionary<string, decimal>();
+
+        foreach (var currency in currencies)
         {
-            entry.SlidingExpiration = _cacheExpiration;
+            // Rate from currency to USD
+            rates[$"{currency.Code}_USD"] = 1 / currency.ExchangeRateToUSD;
+            // Rate from USD to currency
+            rates[$"USD_{currency.Code}"] = currency.ExchangeRateToUSD;
+        }
 
-            var currencies = await GetAllCurrenciesAsync();
-            var rates = new Dictionary<string, decimal>();
-
-            foreach (var currency in currencies)
-            {
-                // Rate from currency to USD
-                rates[$"{currency.Code}_USD"] = 1 / currency.ExchangeRateToUSD;
-                // Rate from USD to currency
-                rates[$"USD_{currency.Code}"] = currency.ExchangeRateToUSD;
-            }
-
-            return rates;
-        });
+        return rates;
     }
 }

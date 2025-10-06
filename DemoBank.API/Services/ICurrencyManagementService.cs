@@ -1,9 +1,7 @@
 ﻿using DemoBank.API.Data;
-using DemoBank.API.Helpers;
 using DemoBank.Core.DTOs;
 using DemoBank.Core.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace DemoBank.API.Services;
 
@@ -37,17 +35,14 @@ public interface ICurrencyManagementService
 public class CurrencyManagementService : ICurrencyManagementService
 {
     private readonly DemoBankContext _context;
-    private readonly IMemoryCache _cache;
     private readonly ILogger<CurrencyManagementService> _logger;
     private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5);
 
     public CurrencyManagementService(
         DemoBankContext context,
-        IMemoryCache cache,
         ILogger<CurrencyManagementService> logger)
     {
         _context = context;
-        _cache = cache;
         _logger = logger;
     }
 
@@ -85,9 +80,6 @@ public class CurrencyManagementService : ICurrencyManagementService
 
         _context.Currencies.Add(currency);
         await _context.SaveChangesAsync();
-
-        // Clear cache
-        ClearCurrencyCache();
 
         _logger.LogInformation($"Currency {currency.Code} created by {createdBy}");
 
@@ -147,9 +139,6 @@ public class CurrencyManagementService : ICurrencyManagementService
 
         await _context.SaveChangesAsync();
 
-        // Clear cache
-        ClearCurrencyCache();
-
         _logger.LogInformation($"Currency {currency.Code} updated by {updatedBy}");
 
         return MapToDetailsDto(currency);
@@ -173,9 +162,6 @@ public class CurrencyManagementService : ICurrencyManagementService
         _context.Currencies.Remove(currency);
         await _context.SaveChangesAsync();
 
-        // Clear cache
-        ClearCurrencyCache();
-
         _logger.LogInformation($"Currency {currency.Code} deleted");
 
         return true;
@@ -194,9 +180,6 @@ public class CurrencyManagementService : ICurrencyManagementService
 
         await _context.SaveChangesAsync();
 
-        // Clear cache
-        ClearCurrencyCache();
-
         _logger.LogInformation($"Currency {currency.Code} status changed to {(isActive ? "active" : "inactive")}");
 
         return true;
@@ -206,74 +189,54 @@ public class CurrencyManagementService : ICurrencyManagementService
     {
         var cacheKey = $"all_currencies_detailed_{includeInactive}";
 
-        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SlidingExpiration = _cacheExpiration;
+        var query = _context.Currencies.AsQueryable();
 
-            var query = _context.Currencies.AsQueryable();
+        if (!includeInactive)
+            query = query.Where(c => c.IsActive);
 
-            if (!includeInactive)
-                query = query.Where(c => c.IsActive);
+        var currencies = await query
+            .OrderBy(c => c.Type)
+            .ThenBy(c => c.Code)
+            .ToListAsync();
 
-            var currencies = await query
-                .OrderBy(c => c.Type)
-                .ThenBy(c => c.Code)
-                .ToListAsync();
-
-            return currencies.Select(MapToDetailsDto).ToList();
-        });
+        return currencies.Select(MapToDetailsDto).ToList();
     }
 
     public async Task<CurrencyDetailsDto> GetCurrencyDetailsAsync(string code)
     {
         var cacheKey = $"currency_details_{code.ToUpper()}";
 
-        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SlidingExpiration = _cacheExpiration;
+        var currency = await _context.Currencies
+            .FirstOrDefaultAsync(c => c.Code == code.ToUpper());
 
-            var currency = await _context.Currencies
-                .FirstOrDefaultAsync(c => c.Code == code.ToUpper());
+        if (currency == null)
+            return null;
 
-            if (currency == null)
-                return null;
-
-            return MapToDetailsDto(currency);
-        });
+        return MapToDetailsDto(currency);
     }
 
     public async Task<List<CurrencyDetailsDto>> GetCryptoCurrenciesAsync()
     {
         var cacheKey = "crypto_currencies";
 
-        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SlidingExpiration = _cacheExpiration;
+        var currencies = await _context.Currencies
+            .Where(c => c.Type == CurrencyType.Crypto && c.IsActive)
+            .OrderBy(c => c.Code)
+            .ToListAsync();
 
-            var currencies = await _context.Currencies
-                .Where(c => c.Type == CurrencyType.Crypto && c.IsActive)
-                .OrderBy(c => c.Code)
-                .ToListAsync();
-
-            return currencies.Select(MapToDetailsDto).ToList();
-        });
+        return currencies.Select(MapToDetailsDto).ToList();
     }
 
     public async Task<List<CurrencyDetailsDto>> GetFiatCurrenciesAsync()
     {
         var cacheKey = "fiat_currencies";
 
-        return await _cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SlidingExpiration = _cacheExpiration;
+        var currencies = await _context.Currencies
+            .Where(c => c.Type == CurrencyType.Fiat && c.IsActive)
+            .OrderBy(c => c.Code)
+            .ToListAsync();
 
-            var currencies = await _context.Currencies
-                .Where(c => c.Type == CurrencyType.Fiat && c.IsActive)
-                .OrderBy(c => c.Code)
-                .ToListAsync();
-
-            return currencies.Select(MapToDetailsDto).ToList();
-        });
+        return currencies.Select(MapToDetailsDto).ToList();
     }
 
     public async Task<bool> UpdateExchangeRatesAsync(Dictionary<string, decimal> rates)
@@ -291,9 +254,6 @@ public class CurrencyManagementService : ICurrencyManagementService
         }
 
         await _context.SaveChangesAsync();
-
-        // Clear cache
-        ClearCurrencyCache();
 
         return true;
     }
@@ -319,9 +279,6 @@ public class CurrencyManagementService : ICurrencyManagementService
             }
 
             await _context.SaveChangesAsync();
-
-            // Clear cache
-            ClearCurrencyCache();
 
             return true;
         }
@@ -543,15 +500,5 @@ public class CurrencyManagementService : ICurrencyManagementService
         };
 
         return prefix + Convert.ToBase64String(hash).Replace("/", "").Replace("+", "").Substring(0, 40);
-    }
-
-    private void ClearCurrencyCache()
-    {
-        _cache.Remove("all_currencies");
-        _cache.Remove("all_currencies_detailed_true");
-        _cache.Remove("all_currencies_detailed_false");
-        _cache.Remove("crypto_currencies");
-        _cache.Remove("fiat_currencies");
-        _cache.Remove("all_exchange_rates");
     }
 }
