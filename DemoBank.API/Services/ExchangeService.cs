@@ -31,8 +31,6 @@ public class ExchangeService : IExchangeService
 
     public async Task<ExchangeResultDto> ExchangeCurrencyAsync(Guid userId, ExchangeRequestDto exchangeDto)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
         try
         {
             // Get source account
@@ -208,8 +206,6 @@ public class ExchangeService : IExchangeService
             // Check rate alerts
             await CheckAndTriggerRateAlertsAsync(fromAccount.Currency, toAccount.Currency, exchangeRate);
 
-            await transaction.CommitAsync();
-
             return new ExchangeResultDto
             {
                 Success = true,
@@ -230,7 +226,6 @@ public class ExchangeService : IExchangeService
         }
         catch
         {
-            await transaction.RollbackAsync();
             throw;
         }
     }
