@@ -171,6 +171,8 @@ builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ITransferService, TransferService>();
+builder.Services.AddScoped<ITopUpService, TopUpService>();
+
 
 // Register Financial Services
 builder.Services.AddScoped<IExchangeService, ExchangeService>();
