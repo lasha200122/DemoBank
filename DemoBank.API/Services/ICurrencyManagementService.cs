@@ -38,23 +38,17 @@ public class CurrencyManagementService : ICurrencyManagementService
 {
     private readonly DemoBankContext _context;
     private readonly IMemoryCache _cache;
-    private readonly INotificationHelper _notificationHelper;
     private readonly ILogger<CurrencyManagementService> _logger;
-    private readonly HttpClient _httpClient;
     private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(5);
 
     public CurrencyManagementService(
         DemoBankContext context,
         IMemoryCache cache,
-        INotificationHelper notificationHelper,
-        ILogger<CurrencyManagementService> logger,
-        IHttpClientFactory httpClientFactory)
+        ILogger<CurrencyManagementService> logger)
     {
         _context = context;
         _cache = cache;
-        _notificationHelper = notificationHelper;
         _logger = logger;
-        _httpClient = httpClientFactory.CreateClient();
     }
 
     public async Task<CurrencyDetailsDto> CreateCurrencyAsync(CreateCurrencyDto dto, string createdBy)

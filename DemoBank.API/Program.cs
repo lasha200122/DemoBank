@@ -176,6 +176,7 @@ builder.Services.AddScoped<ITransferService, TransferService>();
 builder.Services.AddScoped<IExchangeService, ExchangeService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<ICurrencyManagementService, CurrencyManagementService>();
 
 // Register Enhanced Services
 builder.Services.AddScoped<IDashboardService, DashboardService>();
