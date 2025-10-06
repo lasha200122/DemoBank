@@ -184,6 +184,8 @@ builder.Services.AddScoped<ICurrencyManagementService, CurrencyManagementService
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
+builder.Services.AddScoped<IStockService, StockService>();
+
 
 // Register Background Services
 builder.Services.AddHostedService<NotificationBackgroundService>();
