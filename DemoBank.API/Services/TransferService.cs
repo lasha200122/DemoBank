@@ -27,8 +27,6 @@ public class TransferService : ITransferService
 
     public async Task<TransferResultDto> TransferBetweenOwnAccountsAsync(Guid userId, InternalTransferDto transferDto)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
         try
         {
             // Get both accounts
@@ -139,7 +137,6 @@ public class TransferService : ITransferService
                 NotificationType.Transaction
             );
 
-            await transaction.CommitAsync();
 
             return new TransferResultDto
             {
@@ -159,7 +156,6 @@ public class TransferService : ITransferService
         }
         catch
         {
-            await transaction.RollbackAsync();
             throw;
         }
     }
