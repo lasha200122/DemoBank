@@ -22,26 +22,22 @@ public class AccountTopUpDto
     public string Description { get; set; }
 
     // Payment method specific fields
-    public CardPaymentDetails CardDetails { get; set; }
-    public BankAccountDetails BankDetails { get; set; }
-    public PayPalDetails PayPalDetails { get; set; }
+    public CardPaymentDetails? CardDetails { get; set; }
+    public BankAccountDetails? BankDetails { get; set; }
+    public PayPalDetails? PayPalDetails { get; set; }
 }
 
 public class CardPaymentDetails
 {
-    [Required]
     [CreditCard]
     public string CardNumber { get; set; }
 
-    [Required]
     [MaxLength(100)]
     public string CardHolderName { get; set; }
 
-    [Required]
     [RegularExpression(@"^(0[1-9]|1[0-2])\/\d{2}$")]
     public string ExpiryDate { get; set; } // MM/YY format
 
-    [Required]
     [RegularExpression(@"^\d{3,4}$")]
     public string CVV { get; set; }
 
@@ -67,7 +63,6 @@ public class BankAccountDetails
 
 public class PayPalDetails
 {
-    [Required]
     [EmailAddress]
     public string Email { get; set; }
 
