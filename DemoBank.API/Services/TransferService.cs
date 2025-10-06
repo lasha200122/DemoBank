@@ -162,8 +162,6 @@ public class TransferService : ITransferService
 
     public async Task<TransferResultDto> TransferToAnotherUserAsync(Guid fromUserId, ExternalTransferDto transferDto)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
         try
         {
             // Get source account
@@ -195,7 +193,6 @@ public class TransferService : ITransferService
             if (fromAccount.Id == toAccount.Id)
                 throw new InvalidOperationException("Cannot transfer to the same account");
 
-            // Calculate amounts with currency conversion
             decimal amountInFromCurrency = transferDto.Amount;
             decimal amountInToCurrency = transferDto.Amount;
             decimal? exchangeRate = null;
@@ -297,7 +294,6 @@ public class TransferService : ITransferService
                 NotificationType.Transaction
             );
 
-            await transaction.CommitAsync();
 
             return new TransferResultDto
             {
@@ -317,7 +313,6 @@ public class TransferService : ITransferService
         }
         catch
         {
-            await transaction.RollbackAsync();
             throw;
         }
     }

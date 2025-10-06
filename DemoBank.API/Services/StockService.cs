@@ -81,7 +81,7 @@ public class StockService : IStockService
         }
 
         // Rate limiting
-        await WaitForRateLimit();
+        //await WaitForRateLimit();
 
         try
         {
@@ -97,7 +97,7 @@ public class StockService : IStockService
             }
 
             // Get previous day's price
-            await WaitForRateLimit();
+           // await WaitForRateLimit();
             var priceUrl = $"https://api.polygon.io/v2/aggs/ticker/{symbol.ToUpper()}/prev?adjusted=true&apiKey={_apiKey}";
             var priceResponse = await _httpClient.GetStringAsync(priceUrl);
             var priceData = JsonSerializer.Deserialize<PolygonPriceResponse>(priceResponse);
