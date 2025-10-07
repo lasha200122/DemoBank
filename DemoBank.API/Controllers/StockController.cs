@@ -1,7 +1,6 @@
 ﻿using DemoBank.API.Services;
 using DemoBank.Core.DTOs;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DemoBank.API.Controllers;
@@ -28,9 +27,18 @@ public class StockController : ControllerBase
         {
             var stocks = await _stockService.GetPopularStocksAsync();
 
+            if (stocks == null || stocks.Count == 0)
+            {
+                // Return 202 Accepted with a message that data is being loaded
+                return Accepted(ResponseDto<object>.SuccessResponse(
+                    new { message = "Stock data is being loaded. Please try again in a moment." },
+                    "Data initialization in progress"
+                ));
+            }
+
             return Ok(ResponseDto<List<StockDto>>.SuccessResponse(
                 stocks,
-                "Popular stocks retrieved successfully"
+                $"Retrieved {stocks.Count} popular stocks"
             ));
         }
         catch (Exception ex)
@@ -57,7 +65,15 @@ public class StockController : ControllerBase
 
             if (stock == null)
             {
-                return NotFound(ResponseDto<object>.ErrorResponse($"Stock {symbol} not found"));
+                // Stock not found or not yet cached
+                return NotFound(ResponseDto<object>.SuccessResponse(
+                    new
+                    {
+                        message = $"Stock {symbol} is not currently available. It has been added to tracking and will be available shortly.",
+                        symbol = symbol.ToUpper()
+                    },
+                    "Stock added to tracking"
+                ));
             }
 
             return Ok(ResponseDto<StockDto>.SuccessResponse(
@@ -87,13 +103,16 @@ public class StockController : ControllerBase
 
             var stocks = await _stockService.SearchStocksAsync(query);
 
+            // Even if no results, return success with empty list
             return Ok(ResponseDto<StockSearchResultDto>.SuccessResponse(
                 new StockSearchResultDto
                 {
                     Stocks = stocks,
                     TotalResults = stocks.Count
                 },
-                $"Found {stocks.Count} stocks matching '{query}'"
+                stocks.Count > 0
+                    ? $"Found {stocks.Count} stocks matching '{query}'"
+                    : $"No stocks found matching '{query}'"
             ));
         }
         catch (Exception ex)
@@ -104,4 +123,78 @@ public class StockController : ControllerBase
             ));
         }
     }
+
+    // GET: api/Stock/status
+    [HttpGet("status")]
+    [Authorize] // Available to all authenticated users
+    public async Task<IActionResult> GetServiceStatus()
+    {
+        try
+        {
+            var status = await _stockService.GetServiceStatusAsync();
+
+            // Prepare a simplified status for regular users
+            var simplifiedStatus = new
+            {
+                DataAvailable = status.CacheStatistics.CachedStockCount > 0,
+                CachedStocks = status.CacheStatistics.CachedStockCount,
+                LastUpdate = status.WorkerStatus.LastFullUpdate,
+                NextUpdateIn = status.WorkerStatus.NextUpdateIn.TotalMinutes,
+                RateLimitRemaining = status.RateLimitStatus.RemainingRequests
+            };
+
+            return Ok(ResponseDto<object>.SuccessResponse(
+                simplifiedStatus,
+                "Stock service status"
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting service status");
+            return StatusCode(500, ResponseDto<object>.ErrorResponse(
+                "An error occurred while fetching service status"
+            ));
+        }
+    }
+
+    // POST: api/Stock/track
+    [HttpPost("track")]
+    [Authorize(Roles = "Admin")] // Admin only
+    public async Task<IActionResult> TrackStock([FromBody] TrackStockDto request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request?.Symbol))
+            {
+                return BadRequest(ResponseDto<object>.ErrorResponse("Stock symbol is required"));
+            }
+
+            var success = await _stockService.AddStockToTrackingAsync(request.Symbol);
+
+            if (success)
+            {
+                return Ok(ResponseDto<object>.SuccessResponse(
+                    new { Symbol = request.Symbol.ToUpper() },
+                    $"Stock {request.Symbol} added to tracking"
+                ));
+            }
+
+            return BadRequest(ResponseDto<object>.ErrorResponse(
+                $"Unable to add {request.Symbol} to tracking at this time"
+            ));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error adding stock {request?.Symbol} to tracking");
+            return StatusCode(500, ResponseDto<object>.ErrorResponse(
+                "An error occurred while adding the stock to tracking"
+            ));
+        }
+    }
+}
+
+
+public class TrackStockDto
+{
+    public string Symbol { get; set; }
 }

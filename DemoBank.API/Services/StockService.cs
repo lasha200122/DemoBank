@@ -2,126 +2,109 @@
 using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using DemoBank.API.Fetchers;
+using DemoBank.API.Workers;
 
 namespace DemoBank.API.Services;
 
 public class StockService : IStockService
 {
-    private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
     private readonly ILogger<StockService> _logger;
-    private readonly string _apiKey = "FByWSg7O5bgeRPbk27vRS0mq1jbexhQM";
+    private readonly StockDataFetcher _dataFetcher;
+    private readonly StockDataBackgroundWorker _backgroundWorker;
 
-    // Popular stocks to display
-    private readonly List<string> _popularSymbols = new List<string>
+    // Popular stocks that are always prioritized
+    private readonly List<string> _popularSymbols = new()
     {
         "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA",
         "META", "TSLA", "BRK.B", "V", "JPM",
         "WMT", "MA", "JNJ", "PG", "UNH"
     };
 
-    // Rate limiting
-    private readonly SemaphoreSlim _rateLimiter = new SemaphoreSlim(1, 1);
-    private readonly Queue<DateTime> _requestTimes = new Queue<DateTime>();
-    private readonly object _lockObject = new object();
-
-    public StockService(IMemoryCache cache, ILogger<StockService> logger)
+    public StockService(
+        IMemoryCache cache,
+        ILogger<StockService> logger,
+        StockDataFetcher dataFetcher,
+        StockDataBackgroundWorker backgroundWorker)
     {
-        _httpClient = new HttpClient();
         _cache = cache;
         _logger = logger;
+        _dataFetcher = dataFetcher;
+        _backgroundWorker = backgroundWorker;
     }
 
     public async Task<List<StockDto>> GetPopularStocksAsync()
     {
-        var cacheKey = "popular_stocks";
-
-        // Check cache first
-        if (_cache.TryGetValue(cacheKey, out List<StockDto> cachedStocks))
+        // First, try to get from cache (populated by background worker)
+        if (_cache.TryGetValue("popular_stocks", out List<StockDto> cachedStocks))
         {
-            _logger.LogInformation("Returning popular stocks from cache");
+            _logger.LogDebug("Returning popular stocks from cache");
             return cachedStocks;
         }
 
-        _logger.LogInformation("Fetching popular stocks from Polygon API");
+        // If cache miss, get individual stocks from cache
+        _logger.LogInformation("Popular stocks cache miss, fetching from individual caches");
         var stocks = new List<StockDto>();
 
         foreach (var symbol in _popularSymbols)
         {
-            try
+            var cacheKey = $"stock_{symbol.ToUpper()}";
+            if (_cache.TryGetValue(cacheKey, out StockDto stock))
             {
-                var stock = await GetStockBySymbolAsync(symbol);
-                if (stock != null)
-                {
-                    stocks.Add(stock);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error fetching stock {symbol}");
+                stocks.Add(stock);
             }
         }
 
-        // Cache for 6 hours
-        _cache.Set(cacheKey, stocks, TimeSpan.FromHours(6));
-        _logger.LogInformation($"Cached {stocks.Count} popular stocks for 6 hours");
+        // If we have some stocks, cache and return them
+        if (stocks.Count > 0)
+        {
+            _cache.Set("popular_stocks", stocks, TimeSpan.FromMinutes(5));
+            _logger.LogInformation($"Cached {stocks.Count} popular stocks for 5 minutes");
+            return stocks;
+        }
 
-        return stocks;
+        // If no data in cache at all, return empty list or minimal data
+        // The background worker will populate the cache soon
+        _logger.LogWarning("No stock data available in cache. Background worker may still be initializing.");
+        return new List<StockDto>();
     }
 
     public async Task<StockDto> GetStockBySymbolAsync(string symbol)
     {
         var cacheKey = $"stock_{symbol.ToUpper()}";
 
-        // Check cache
+        // First, check cache (populated by background worker)
         if (_cache.TryGetValue(cacheKey, out StockDto cachedStock))
         {
-            _logger.LogInformation($"Returning {symbol} from cache");
+            _logger.LogDebug($"Returning {symbol} from cache");
             return cachedStock;
         }
 
-        // Rate limiting
-        //await WaitForRateLimit();
+        _logger.LogInformation($"Cache miss for {symbol}");
 
+        // If it's a new symbol not being tracked, add it to the background worker
+        _backgroundWorker.AddStockSymbol(symbol);
+
+        // For immediate response, try to fetch it directly (respecting rate limits)
         try
         {
-            // Get ticker details (company name and logo)
-            var detailsUrl = $"https://api.polygon.io/v3/reference/tickers/{symbol.ToUpper()}?apiKey={_apiKey}";
-            var detailsResponse = await _httpClient.GetStringAsync(detailsUrl);
-            var detailsData = JsonSerializer.Deserialize<PolygonTickerResponse>(detailsResponse);
+            _logger.LogInformation($"Fetching {symbol} directly for immediate response");
+            var stock = await _dataFetcher.FetchStockData(symbol);
 
-            if (detailsData?.results == null)
+            if (stock != null)
             {
-                _logger.LogWarning($"No ticker details found for {symbol}");
-                return null;
+                // Cache it temporarily until background worker refreshes it
+                _cache.Set(cacheKey, stock, TimeSpan.FromHours(1));
+                return stock;
             }
-
-            // Get previous day's price
-           // await WaitForRateLimit();
-            var priceUrl = $"https://api.polygon.io/v2/aggs/ticker/{symbol.ToUpper()}/prev?adjusted=true&apiKey={_apiKey}";
-            var priceResponse = await _httpClient.GetStringAsync(priceUrl);
-            var priceData = JsonSerializer.Deserialize<PolygonPriceResponse>(priceResponse);
-
-            var stock = new StockDto
-            {
-                Symbol = symbol.ToUpper(),
-                Name = detailsData.results.name,
-                LogoUrl = detailsData.results.branding?.logo_url ?? detailsData.results.branding?.icon_url,
-                Price = priceData?.results?.FirstOrDefault()?.c,
-                LastUpdated = DateTime.UtcNow
-            };
-
-            // Cache for 6 hours
-            _cache.Set(cacheKey, stock, TimeSpan.FromHours(6));
-            _logger.LogInformation($"Cached stock data for {symbol}");
-
-            return stock;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error fetching stock data for {symbol}");
-            return null;
+            _logger.LogError(ex, $"Error fetching stock {symbol} directly");
         }
+
+        return null;
     }
 
     public async Task<List<StockDto>> SearchStocksAsync(string query)
@@ -133,64 +116,30 @@ public class StockService : IStockService
 
         var cacheKey = $"search_{query.ToUpper()}";
 
+        // Check cache first
         if (_cache.TryGetValue(cacheKey, out List<StockDto> cachedResults))
         {
-            _logger.LogInformation($"Returning search results for '{query}' from cache");
+            _logger.LogDebug($"Returning search results for '{query}' from cache");
             return cachedResults;
         }
 
-        await WaitForRateLimit();
-
         try
         {
-            var searchUrl = $"https://api.polygon.io/v3/reference/tickers?search={query}&active=true&limit=10&apiKey={_apiKey}";
-            var response = await _httpClient.GetStringAsync(searchUrl);
-            var data = JsonSerializer.Deserialize<PolygonSearchResponse>(response);
+            // Use the data fetcher for search (it handles rate limiting)
+            _logger.LogInformation($"Performing search for '{query}'");
+            var stocks = await _dataFetcher.SearchStocks(query, 10);
 
-            if (data?.results == null || !data.results.Any())
+            if (stocks.Count > 0)
             {
-                return new List<StockDto>();
-            }
+                // Cache search results for 30 minutes
+                _cache.Set(cacheKey, stocks, TimeSpan.FromMinutes(30));
 
-            var stocks = new List<StockDto>();
-            foreach (var result in data.results.Take(10))
-            {
-                // Get price for each result
-                await WaitForRateLimit();
-                var priceUrl = $"https://api.polygon.io/v2/aggs/ticker/{result.ticker}/prev?adjusted=true&apiKey={_apiKey}";
-
-                try
+                // Add any new symbols to the background worker for tracking
+                foreach (var stock in stocks)
                 {
-                    var priceResponse = await _httpClient.GetStringAsync(priceUrl);
-                    var priceData = JsonSerializer.Deserialize<PolygonPriceResponse>(priceResponse);
-
-                    stocks.Add(new StockDto
-                    {
-                        Symbol = result.ticker,
-                        Name = result.name,
-                        LogoUrl = result.branding?.logo_url ?? result.branding?.icon_url,
-                        Price = priceData?.results?.FirstOrDefault()?.c,
-                        LastUpdated = DateTime.UtcNow
-                    });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, $"Could not fetch price for {result.ticker}");
-                    // Add without price
-                    stocks.Add(new StockDto
-                    {
-                        Symbol = result.ticker,
-                        Name = result.name,
-                        LogoUrl = result.branding?.logo_url ?? result.branding?.icon_url,
-                        Price = null,
-                        LastUpdated = DateTime.UtcNow
-                    });
+                    _backgroundWorker.AddStockSymbol(stock.Symbol);
                 }
             }
-
-            // Cache for 1 hour
-            _cache.Set(cacheKey, stocks, TimeSpan.FromHours(1));
-            _logger.LogInformation($"Cached search results for '{query}'");
 
             return stocks;
         }
@@ -201,44 +150,67 @@ public class StockService : IStockService
         }
     }
 
-    // Rate limiter: 5 requests per minute
-    private async Task WaitForRateLimit()
+    public async Task<StockServiceStatus> GetServiceStatusAsync()
     {
-        await _rateLimiter.WaitAsync();
+        var workerStatus = _backgroundWorker.GetStatus();
+        var rateLimitStatus = _dataFetcher.GetRateLimitStatus();
+
+        return new StockServiceStatus
+        {
+            WorkerStatus = workerStatus,
+            RateLimitStatus = rateLimitStatus,
+            CacheStatistics = GetCacheStatistics()
+        };
+    }
+
+    public async Task<bool> AddStockToTrackingAsync(string symbol)
+    {
         try
         {
-            lock (_lockObject)
+            _backgroundWorker.AddStockSymbol(symbol);
+            _logger.LogInformation($"Added {symbol} to tracking");
+
+            // Try to fetch it immediately for caching
+            var stock = await _dataFetcher.FetchStockData(symbol);
+            if (stock != null)
             {
-                var now = DateTime.UtcNow;
-
-                // Remove requests older than 1 minute
-                while (_requestTimes.Count > 0 && (now - _requestTimes.Peek()).TotalMinutes >= 1)
-                {
-                    _requestTimes.Dequeue();
-                }
-
-                // If we've made 5 requests in the last minute, wait
-                if (_requestTimes.Count >= 5)
-                {
-                    var oldestRequest = _requestTimes.Peek();
-                    var waitTime = TimeSpan.FromMinutes(1) - (now - oldestRequest);
-                    if (waitTime.TotalMilliseconds > 0)
-                    {
-                        Thread.Sleep(waitTime);
-                    }
-                    _requestTimes.Dequeue();
-                }
-
-                _requestTimes.Enqueue(DateTime.UtcNow);
+                var cacheKey = $"stock_{symbol.ToUpper()}";
+                _cache.Set(cacheKey, stock, TimeSpan.FromHours(1));
+                return true;
             }
+
+            return false;
         }
-        finally
+        catch (Exception ex)
         {
-            _rateLimiter.Release();
+            _logger.LogError(ex, $"Error adding {symbol} to tracking");
+            return false;
         }
     }
-}
 
+    private CacheStatistics GetCacheStatistics()
+    {
+        var stats = new CacheStatistics();
+
+        // Count cached stocks
+        var stockSymbols = new HashSet<string>();
+
+        // Check popular symbols
+        foreach (var symbol in _popularSymbols)
+        {
+            var cacheKey = $"stock_{symbol.ToUpper()}";
+            if (_cache.TryGetValue(cacheKey, out _))
+            {
+                stockSymbols.Add(symbol);
+            }
+        }
+
+        stats.CachedStockCount = stockSymbols.Count;
+        stats.HasPopularStocksCache = _cache.TryGetValue("popular_stocks", out _);
+
+        return stats;
+    }
+}
 // Polygon API Response Models
 public class PolygonTickerResponse
 {

@@ -1,7 +1,9 @@
 using System.Text;
 using DemoBank.API.Data;
+using DemoBank.API.Fetchers;
 using DemoBank.API.Helpers;
 using DemoBank.API.Services;
+using DemoBank.API.Workers;
 using DemoBank.Core.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -184,8 +186,11 @@ builder.Services.AddScoped<ICurrencyManagementService, CurrencyManagementService
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
-builder.Services.AddScoped<IStockService, StockService>();
 
+builder.Services.AddSingleton<StockDataFetcher>();
+builder.Services.AddSingleton<StockDataBackgroundWorker>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<StockDataBackgroundWorker>());
+builder.Services.AddScoped<IStockService, StockService>();
 
 // Register Background Services
 builder.Services.AddHostedService<NotificationBackgroundService>();
