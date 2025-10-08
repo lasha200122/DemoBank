@@ -521,17 +521,27 @@ public class InvestmentAdminService : IInvestmentAdminService
         endDate ??= DateTime.UtcNow.AddMonths(1);
 
         var payouts = await _context.InvestmentReturns
-            .Where(r => r.PaymentDate >= startDate && r.PaymentDate <= endDate)
+            .Where(r => (!startDate.HasValue || r.PaymentDate >= startDate) &&
+                        (!endDate.HasValue || r.PaymentDate <= endDate))
             .ToListAsync();
 
         var todayPayouts = payouts.Where(p => p.PaymentDate.Date == DateTime.UtcNow.Date);
         var weekPayouts = payouts.Where(p => p.PaymentDate >= DateTime.UtcNow.AddDays(-7));
         var monthPayouts = payouts.Where(p => p.PaymentDate.Month == DateTime.UtcNow.Month);
 
-        var upcoming = await _context.Investments
+        // Fetch active investments and calculate on client side
+        var activeInvestments = await _context.Investments
             .Include(i => i.User)
             .Where(i => i.Status == InvestmentStatus.Active)
-            .Select(i => new { Investment = i, NextPayout = CalculateNextPayoutDate(i) })
+            .ToListAsync(); // Execute query here
+
+        // Now perform the calculation in memory
+        var upcoming = activeInvestments
+            .Select(i => new
+            {
+                Investment = i,
+                NextPayout = CalculateNextPayoutDate(i)
+            })
             .Where(x => x.NextPayout.HasValue && x.NextPayout.Value <= endDate)
             .Select(x => new UpcomingPayoutDto
             {
@@ -541,7 +551,7 @@ public class InvestmentAdminService : IInvestmentAdminService
                 ScheduledDate = x.NextPayout.Value,
                 Type = x.Investment.PayoutFrequency.ToString()
             })
-            .ToListAsync();
+            .ToList();
 
         return new TotalPayoutsDto
         {
@@ -552,7 +562,6 @@ public class InvestmentAdminService : IInvestmentAdminService
             UpcomingPayouts = upcoming.OrderBy(u => u.ScheduledDate).Take(10).ToList()
         };
     }
-
     public async Task<bool> ManualPayoutAsync(Guid investmentId, decimal amount, string processedBy)
     {
         var investment = await _context.Investments
