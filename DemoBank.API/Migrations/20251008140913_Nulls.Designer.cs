@@ -3,6 +3,7 @@ using System;
 using DemoBank.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DemoBank.API.Migrations
 {
     [DbContext(typeof(DemoBankContext))]
-    partial class DemoBankContextModelSnapshot : ModelSnapshot
+    [Migration("20251008140913_Nulls")]
+    partial class Nulls
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -298,7 +301,7 @@ namespace DemoBank.API.Migrations
                     b.Property<decimal>("CustomROI")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<Guid?>("CustomRateId")
+                    b.Property<Guid>("CustomRateId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("LastPayoutDate")
@@ -981,7 +984,9 @@ namespace DemoBank.API.Migrations
                 {
                     b.HasOne("DemoBank.Core.Models.InvestmentRate", "CustomRate")
                         .WithMany()
-                        .HasForeignKey("CustomRateId");
+                        .HasForeignKey("CustomRateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("DemoBank.Core.Models.InvestmentPlan", "Plan")
                         .WithMany("Investments")

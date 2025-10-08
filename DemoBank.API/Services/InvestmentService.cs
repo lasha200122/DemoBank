@@ -114,7 +114,7 @@ public class InvestmentService : IInvestmentService
             AutoRenew = dto.AutoRenew,
             MinimumBalance = dto.Amount,
             Notes = dto.Notes,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         _context.Investments.Add(investment);

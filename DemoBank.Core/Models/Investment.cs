@@ -46,20 +46,21 @@ public class Investment
 
     public DateTime? ApprovedDate { get; set; }
 
-    public string ApprovedBy { get; set; }
+    public string? ApprovedBy { get; set; }
 
     public DateTime? RejectedDate { get; set; }
 
-    public string RejectionReason { get; set; }
+    public string? RejectionReason { get; set; }
 
     public bool AutoRenew { get; set; }
+    public Guid? CustomRateId { get; set; }
 
     public decimal MinimumBalance { get; set; } // Minimum balance to maintain
 
     public PayoutFrequency PayoutFrequency { get; set; }
 
     [MaxLength(1000)]
-    public string Notes { get; set; }
+    public string? Notes { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
