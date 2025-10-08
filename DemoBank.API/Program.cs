@@ -187,6 +187,11 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 
+builder.Services.AddScoped<IInvestmentService, InvestmentService>();
+builder.Services.AddScoped<IInvestmentAdminService, InvestmentAdminService>();
+builder.Services.AddScoped<IInvestmentCalculatorService, InvestmentCalculatorService>();
+
+
 builder.Services.AddSingleton<StockDataFetcher>();
 builder.Services.AddSingleton<StockDataBackgroundWorker>();
 builder.Services.AddHostedService(provider => provider.GetRequiredService<StockDataBackgroundWorker>());

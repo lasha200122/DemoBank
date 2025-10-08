@@ -22,6 +22,11 @@ public class DemoBankContext : DbContext
     public DbSet<ExchangeRateHistory> ExchangeRateHistories { get; set; }
     public DbSet<FavoriteCurrencyPair> FavoriteCurrencyPairs { get; set; }
     public DbSet<ExchangeRateAlert> ExchangeRateAlerts { get; set; }
+    public DbSet<Investment> Investments { get; set; }
+    public DbSet<InvestmentPlan> InvestmentPlans { get; set; }
+    public DbSet<InvestmentReturn> InvestmentReturns { get; set; }
+    public DbSet<InvestmentRate> InvestmentRates { get; set; }
+    public DbSet<InvestmentTransaction> InvestmentTransactions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -233,6 +238,167 @@ public class DemoBankContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Investment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.CustomROI)
+                .HasColumnType("decimal(5,2)");
+
+            entity.Property(e => e.BaseROI)
+                .HasColumnType("decimal(5,2)");
+
+            entity.Property(e => e.ProjectedReturn)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.TotalPaidOut)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.MinimumBalance)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>();
+
+            entity.Property(e => e.Term)
+                .HasConversion<string>();
+
+            entity.Property(e => e.PayoutFrequency)
+                .HasConversion<string>();
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Plan)
+                .WithMany(p => p.Investments)
+                .HasForeignKey(e => e.PlanId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasMany(e => e.Returns)
+                .WithOne(r => r.Investment)
+                .HasForeignKey(r => r.InvestmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(e => e.Transactions)
+                .WithOne(t => t.Investment)
+                .HasForeignKey(t => t.InvestmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // InvestmentPlan configuration
+        modelBuilder.Entity<InvestmentPlan>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.MinimumInvestment)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.MaximumInvestment)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.BaseROI)
+                .HasColumnType("decimal(5,2)");
+
+            entity.Property(e => e.EarlyWithdrawalPenalty)
+                .HasColumnType("decimal(5,2)");
+
+            entity.Property(e => e.VolatilityIndex)
+                .HasColumnType("decimal(5,2)");
+
+            entity.Property(e => e.Type)
+                .HasConversion<string>();
+
+            entity.Property(e => e.DefaultPayoutFrequency)
+                .HasConversion<string>();
+
+            entity.Property(e => e.RiskLevel)
+                .HasConversion<string>();
+        });
+
+        // InvestmentReturn configuration
+        modelBuilder.Entity<InvestmentReturn>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.InterestAmount)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.PrincipalAmount)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.Type)
+                .HasConversion<string>();
+
+            entity.Property(e => e.Status)
+                .HasConversion<string>();
+
+            entity.HasOne(e => e.Investment)
+                .WithMany(i => i.Returns)
+                .HasForeignKey(e => e.InvestmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // InvestmentRate configuration
+        modelBuilder.Entity<InvestmentRate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Rate)
+                .HasColumnType("decimal(5,2)");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
+
+            entity.HasOne(e => e.Plan)
+                .WithMany()
+                .HasForeignKey(e => e.PlanId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
+
+            entity.HasIndex(e => new { e.UserId, e.PlanId, e.RateType })
+                .IsUnique()
+                .HasFilter("[UserId] IS NOT NULL AND [PlanId] IS NOT NULL");
+        });
+
+        // InvestmentTransaction configuration
+        modelBuilder.Entity<InvestmentTransaction>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.BalanceBefore)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.BalanceAfter)
+                .HasColumnType("decimal(18,2)");
+
+            entity.Property(e => e.Type)
+                .HasConversion<string>();
+
+            entity.HasOne(e => e.Investment)
+                .WithMany(i => i.Transactions)
+                .HasForeignKey(e => e.InvestmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Account)
+                .WithMany()
+                .HasForeignKey(e => e.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
