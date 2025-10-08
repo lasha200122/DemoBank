@@ -34,15 +34,15 @@ public class InvestmentService : IInvestmentService
         if (plan == null)
             throw new InvalidOperationException("Investment plan not found or inactive");
 
-        // Validate amount
-        if (dto.Amount < plan.MinimumInvestment || dto.Amount > plan.MaximumInvestment)
-            throw new InvalidOperationException(
-                $"Amount must be between {plan.Currency} {plan.MinimumInvestment:N2} and {plan.Currency} {plan.MaximumInvestment:N2}");
+        //// Validate amount
+        //if (dto.Amount < plan.MinimumInvestment || dto.Amount > plan.MaximumInvestment)
+        //    throw new InvalidOperationException(
+        //        $"Amount must be between {plan.Currency} {plan.MinimumInvestment:N2} and {plan.Currency} {plan.MaximumInvestment:N2}");
 
-        // Validate term
-        if (dto.TermMonths < plan.MinTermMonths || dto.TermMonths > plan.MaxTermMonths)
-            throw new InvalidOperationException(
-                $"Term must be between {plan.MinTermMonths} and {plan.MaxTermMonths} months");
+        //// Validate term
+        //if (dto.TermMonths < plan.MinTermMonths || dto.TermMonths > plan.MaxTermMonths)
+        //    throw new InvalidOperationException(
+        //        $"Term must be between {plan.MinTermMonths} and {plan.MaxTermMonths} months");
 
         // Check if user has sufficient funds
         if (dto.SourceAccountId.HasValue)
