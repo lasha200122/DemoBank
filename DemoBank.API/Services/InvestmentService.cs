@@ -27,7 +27,7 @@ public class InvestmentService : IInvestmentService
 
     public async Task<InvestmentDto> ApplyForInvestmentAsync(Guid userId, CreateInvestmentDto dto)
     {
-        // Validate plan exists and is active
+        // Validate plan exists and is active // re run
         var plan = await _context.InvestmentPlans
             .FirstOrDefaultAsync(p => p.Id == dto.PlanId && p.IsActive);
 
