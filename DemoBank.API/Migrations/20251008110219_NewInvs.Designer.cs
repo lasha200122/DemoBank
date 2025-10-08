@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DemoBank.API.Migrations
 {
     [DbContext(typeof(DemoBankContext))]
-    [Migration("20251008100907_Invests")]
-    partial class Invests
+    [Migration("20251008110219_NewInvs")]
+    partial class NewInvs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -359,6 +359,9 @@ namespace DemoBank.API.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("UserId1")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CustomRateId");
@@ -366,6 +369,8 @@ namespace DemoBank.API.Migrations
                     b.HasIndex("PlanId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("Investments");
                 });
@@ -505,8 +510,7 @@ namespace DemoBank.API.Migrations
                     b.HasIndex("PlanId");
 
                     b.HasIndex("UserId", "PlanId", "RateType")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL AND [PlanId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("InvestmentRates");
                 });
@@ -999,6 +1003,10 @@ namespace DemoBank.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("DemoBank.Core.Models.User", null)
+                        .WithMany("Investments")
+                        .HasForeignKey("UserId1");
+
                     b.Navigation("CustomRate");
 
                     b.Navigation("Plan");
@@ -1157,6 +1165,8 @@ namespace DemoBank.API.Migrations
             modelBuilder.Entity("DemoBank.Core.Models.User", b =>
                 {
                     b.Navigation("Accounts");
+
+                    b.Navigation("Investments");
 
                     b.Navigation("Loans");
 

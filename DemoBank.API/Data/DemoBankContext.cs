@@ -369,8 +369,7 @@ public class DemoBankContext : DbContext
                 .IsRequired(false);
 
             entity.HasIndex(e => new { e.UserId, e.PlanId, e.RateType })
-                .IsUnique()
-                .HasFilter("[UserId] IS NOT NULL AND [PlanId] IS NOT NULL");
+                .IsUnique();
         });
 
         // InvestmentTransaction configuration

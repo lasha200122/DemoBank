@@ -39,6 +39,7 @@ public class User
     public virtual ICollection<Loan> Loans { get; set; }
     public virtual ICollection<Notification> Notifications { get; set; }
     public virtual UserSettings Settings { get; set; }
+    public virtual ICollection<Investment> Investments { get; set; }
 }
 
 public enum UserRole

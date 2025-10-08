@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DemoBank.API.Migrations
 {
     /// <inheritdoc />
-    public partial class Invests : Migration
+    public partial class NewInvs : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -105,7 +105,8 @@ namespace DemoBank.API.Migrations
                     Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    CustomRateId = table.Column<Guid>(type: "uuid", nullable: false)
+                    CustomRateId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId1 = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -128,6 +129,11 @@ namespace DemoBank.API.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Investments_Users_UserId1",
+                        column: x => x.UserId1,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -201,8 +207,7 @@ namespace DemoBank.API.Migrations
                 name: "IX_InvestmentRates_UserId_PlanId_RateType",
                 table: "InvestmentRates",
                 columns: new[] { "UserId", "PlanId", "RateType" },
-                unique: true,
-                filter: "[UserId] IS NOT NULL AND [PlanId] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_InvestmentReturns_InvestmentId",
@@ -223,6 +228,11 @@ namespace DemoBank.API.Migrations
                 name: "IX_Investments_UserId",
                 table: "Investments",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Investments_UserId1",
+                table: "Investments",
+                column: "UserId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InvestmentTransactions_AccountId",
