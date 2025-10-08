@@ -323,32 +323,42 @@ public class InvestmentAdminService : IInvestmentAdminService
     // Plan Management
     public async Task<InvestmentPlanDto> CreatePlanAsync(CreateInvestmentPlanDto dto, string createdBy)
     {
-        var plan = new InvestmentPlan
+        try
         {
-            Id = Guid.NewGuid(),
-            Name = dto.Name,
-            Description = dto.Description,
-            Type = Enum.Parse<InvestmentPlanType>(dto.Type),
-            MinimumInvestment = dto.MinimumInvestment,
-            MaximumInvestment = dto.MaximumInvestment,
-            BaseROI = dto.BaseROI,
-            MinTermMonths = dto.MinTermMonths,
-            MaxTermMonths = dto.MaxTermMonths,
-            DefaultPayoutFrequency = dto.DefaultPayoutFrequency,
-            RequiresApproval = dto.RequiresApproval,
-            EarlyWithdrawalPenalty = dto.EarlyWithdrawalPenalty,
-            RiskLevel = Enum.Parse<RiskLevel>(dto.RiskLevel ?? "Medium"),
-            Currency = dto.Currency,
-            IsActive = true,
-            TierRatesJson = dto.TierRates != null ? JsonSerializer.Serialize(dto.TierRates) : null,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = createdBy
-        };
+            var plan = new InvestmentPlan
+            {
+                Id = Guid.NewGuid(),
+                Name = dto.Name,
+                Description = dto.Description,
+                Type = Enum.Parse<InvestmentPlanType>(dto.Type),
+                MinimumInvestment = dto.MinimumInvestment,
+                MaximumInvestment = dto.MaximumInvestment,
+                BaseROI = dto.BaseROI,
+                MinTermMonths = dto.MinTermMonths,
+                MaxTermMonths = dto.MaxTermMonths,
+                DefaultPayoutFrequency = dto.DefaultPayoutFrequency,
+                RequiresApproval = dto.RequiresApproval,
+                EarlyWithdrawalPenalty = dto.EarlyWithdrawalPenalty,
+                RiskLevel = Enum.Parse<RiskLevel>(dto.RiskLevel ?? "Medium"),
+                Currency = dto.Currency,
+                IsActive = true,
+                TierRatesJson = dto.TierRates != null ? JsonSerializer.Serialize(dto.TierRates) : null,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = createdBy,
+                UpdatedBy = "Admin"
+            };
 
-        _context.InvestmentPlans.Add(plan);
-        await _context.SaveChangesAsync();
+            _context.InvestmentPlans.Add(plan);
+            await _context.SaveChangesAsync();
 
-        return MapPlanToDto(plan);
+            return MapPlanToDto(plan);
+
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+
     }
 
     public async Task<InvestmentPlanDto> UpdatePlanAsync(Guid planId, UpdateInvestmentPlanDto dto, string updatedBy)
