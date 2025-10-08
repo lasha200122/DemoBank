@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 using DemoBank.Core.Models;
 
 namespace DemoBank.Core.DTOs;
@@ -14,7 +9,6 @@ public class CreateInvestmentDto
     public Guid? PlanId { get; set; }
 
     [Required]
-    [Range(100, double.MaxValue)]
     public decimal Amount { get; set; }
 
     [Required]
@@ -22,7 +16,6 @@ public class CreateInvestmentDto
     public string Currency { get; set; } = "USD";
 
     [Required]
-    [Range(1, 360)]
     public int TermMonths { get; set; }
 
     public PayoutFrequency PayoutFrequency { get; set; } = PayoutFrequency.Monthly;
@@ -101,11 +94,9 @@ public class MonthlyPerformanceDto
 public class InvestmentCalculatorDto
 {
     [Required]
-    [Range(100, double.MaxValue)]
     public decimal Amount { get; set; }
 
     [Required]
-    [Range(1, 360)]
     public int TermMonths { get; set; }
 
     public Guid? PlanId { get; set; }
@@ -202,7 +193,6 @@ public class UserInvestmentRateDto
     public string RateType { get; set; }
 
     [Required]
-    [Range(0, 100)]
     public decimal Rate { get; set; }
 
     [Required]
@@ -220,7 +210,6 @@ public class BulkRateUpdateDto
     public List<Guid> InvestmentIds { get; set; }
 
     [Required]
-    [Range(0, 100)]
     public decimal NewROI { get; set; }
 
     [Required]
