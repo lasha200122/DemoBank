@@ -7,7 +7,6 @@ namespace DemoBank.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class StockController : ControllerBase
 {
     private readonly IStockService _stockService;
