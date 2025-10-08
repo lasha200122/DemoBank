@@ -328,7 +328,7 @@ public class InvestmentAnalyticsDto
     public InvestmentSummaryDto Summary { get; set; }
     public PortfolioDistributionDto Distribution { get; set; }
     public List<InvestmentDto> ActiveInvestments { get; set; }
-    public PerformanceMetricsDto Performance { get; set; }
+    public InvestmentPerformanceMetricsDto Performance { get; set; }
     public ProjectionsDto Projections { get; set; }
     public RiskAnalysisDto RiskAnalysis { get; set; }
 }
