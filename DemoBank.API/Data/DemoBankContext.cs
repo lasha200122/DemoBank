@@ -27,6 +27,7 @@ public class DemoBankContext : DbContext
     public DbSet<InvestmentReturn> InvestmentReturns { get; set; }
     public DbSet<InvestmentRate> InvestmentRates { get; set; }
     public DbSet<InvestmentTransaction> InvestmentTransactions { get; set; }
+    public DbSet<BankingDetails> BankingDetails { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -398,6 +399,36 @@ public class DemoBankContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.AccountId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BankingDetails>(entity =>
+        {
+
+            entity.HasKey(e => e.Id);
+            // Indexes
+            entity.HasIndex(e => e.UserId);
+
+            // Columns
+            entity.Property(e => e.BeneficialName)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.IBAN)
+                .IsRequired()
+                .HasMaxLength(34);
+
+            entity.Property(e => e.Reference)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.BIC)
+                .IsRequired()
+                .HasMaxLength(12);
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.BankingDetails)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -18,4 +18,5 @@ public class AdminClientListDto
     public DateTime CreatedAt { get; set; }
     public DateTime LastLogin { get; set; }
     public decimal TotalBalanceUSD { get; set; }
+    public CreateBankingDetailsDto BankingDetails { get; set; }
 }

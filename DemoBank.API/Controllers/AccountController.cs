@@ -129,8 +129,8 @@ public class AccountController : ControllerBase
                 ));
             }
 
-            var userId = GetCurrentUserId();
-            var account = await _accountService.CreateAccountAsync(userId, createDto);
+            var userId = createDto.UserId != null? createDto.UserId : GetCurrentUserId();
+            var account = await _accountService.CreateAccountAsync((Guid)userId, createDto);
             var accountDto = _mapper.Map<AccountDto>(account);
 
             return CreatedAtAction(

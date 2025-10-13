@@ -1,4 +1,5 @@
 ﻿using DemoBank.API.Services;
+using DemoBank.Core.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,5 +38,31 @@ public class ClientController : ControllerBase
         var success = await _clientService.RejectClient(clientId);
         if (!success) return NotFound(new { Message = "Client not found" });
         return Ok(new { Message = "Client rejected successfully" });
+    }
+
+    // POST: api/Account
+    [HttpPost("Banking-details")]
+    public async Task<IActionResult> BankingDetails([FromBody] CreateBankingDetailsDto createDto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ResponseDto<object>.ErrorResponse(
+                    "Invalid account data",
+                    ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
+                ));
+            }
+            var account = await _clientService.CreateBankingDetails(createDto);
+            if (!account) return NotFound(new { Message = "BankingDetails not found" });
+            return Ok(new { Message = "BankingDetails Created Successfully" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ResponseDto<object>.ErrorResponse(
+                "An error occurred while fetching account details"
+            ));
+
+        }
     }
 }

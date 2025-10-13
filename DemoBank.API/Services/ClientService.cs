@@ -35,6 +35,15 @@ public class ClientService : IClientService
                 ActiveInvestments = u.Investments.Count(i => i.Status == InvestmentStatus.Active),
                 ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
                 TotalBalanceUSD = u.Accounts.Where(a => a.IsActive).Sum(a => (decimal?)a.Balance) ?? 0,
+                BankingDetails = u.BankingDetails
+                .Select(b => new CreateBankingDetailsDto
+                {
+                    BeneficialName = b.BeneficialName,
+                    IBAN = b.IBAN,
+                    Reference = b.Reference,
+                    BIC = b.BIC
+                })
+                .FirstOrDefault(),
             })
             .ToListAsync();
 
@@ -61,5 +70,27 @@ public class ClientService : IClientService
 
         client.Status = Status.Rejected;
         return await _context.SaveChangesAsync() > 0;
+    }
+
+    public async Task<bool> CreateBankingDetails(CreateBankingDetailsDto createDto)
+    {
+        var user = await _context.Users.FindAsync(createDto.UserId);
+        if (user == null)
+            throw new InvalidOperationException("User not found");
+
+        var bankingDetails = new BankingDetails
+        {
+            Id = Guid.NewGuid(),
+            UserId = (Guid)createDto.UserId,
+            BeneficialName = createDto.BeneficialName,
+            IBAN = createDto.IBAN,
+            Reference = createDto.Reference,
+            BIC = createDto.BIC
+        };
+
+        _context.BankingDetails.Add(bankingDetails);
+
+        return await _context.SaveChangesAsync() > 0;
+
     }
 }
