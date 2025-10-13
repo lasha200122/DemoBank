@@ -84,7 +84,7 @@ public class UserService : IUserService
             FirstName = registrationDto.FirstName,
             LastName = registrationDto.LastName,
             Role = role,
-            Status = Status.Active,
+            Status = role == UserRole.Client ? Status.Pending : Status.Active,
             CreatedAt = DateTime.UtcNow,
             PotentialInvestmentRange = registrationDto.PotentialInvestmentRange.Value,
             Passkey = role == UserRole.Client ? GenerateRandomString(24) : null
