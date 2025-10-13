@@ -62,8 +62,18 @@ public class DemoBankContext : DbContext
                 .WithOne(e => e.User)
                 .HasForeignKey<UserSettings>(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
-        });
 
+            // Add these relationships:
+            entity.HasMany(e => e.Investments)
+                .WithOne(e => e.User)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(e => e.Invoices)
+                .WithOne(e => e.User)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
         // Account configuration
         modelBuilder.Entity<Account>(entity =>
         {
@@ -165,7 +175,6 @@ public class DemoBankContext : DbContext
                 .HasColumnType("decimal(18,2)");
         });
 
-        // Invoice configuration
         modelBuilder.Entity<Invoice>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -177,12 +186,9 @@ public class DemoBankContext : DbContext
             entity.Property(e => e.Amount)
                 .HasColumnType("decimal(18,2)");
 
-            entity.HasOne<User>()
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+            // Remove the duplicate User relationship configuration since it's now in User entity
+            // The relationship is already configured from the User side
         });
-
         // Notification configuration
         modelBuilder.Entity<Notification>(entity =>
         {
@@ -272,10 +278,8 @@ public class DemoBankContext : DbContext
             entity.Property(e => e.PayoutFrequency)
                 .HasConversion<string>();
 
-            entity.HasOne(e => e.User)
-                .WithMany()
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+            // Remove the duplicate User relationship configuration since it's now in User entity
+            // The relationship is already configured from the User side
 
             entity.HasOne(e => e.Plan)
                 .WithMany(p => p.Investments)
@@ -292,7 +296,6 @@ public class DemoBankContext : DbContext
                 .HasForeignKey(t => t.InvestmentId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
-
         // InvestmentPlan configuration
         modelBuilder.Entity<InvestmentPlan>(entity =>
         {
