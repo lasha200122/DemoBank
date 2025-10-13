@@ -28,7 +28,7 @@ public class ClientService : IClientService
                 InvestmentRange = u.PotentialInvestmentRange ?? 0,
                 Status = u.Status,
                 EmailStatus = false,
-                Passkey = "",
+                Passkey = u.Passkey,
                 CreatedAt = u.CreatedAt,
                 LastLogin = u.LastLogin,
                 ActiveAccounts = u.Accounts.Count(a => a.IsActive),
