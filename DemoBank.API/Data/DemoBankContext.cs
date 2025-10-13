@@ -443,12 +443,11 @@ public class DemoBankContext : DbContext
 
             // Columns
             entity.Property(e => e.YearlyReturn)
-                .IsRequired()
-                .HasMaxLength(50);
+                   .HasColumnType("decimal(18,2)");
 
             entity.Property(e => e.MonthlyReturn)
-                .IsRequired()
-                .HasMaxLength(50);
+                   .HasColumnType("decimal(18,2)");
+
             entity.HasOne(e => e.User)
                 .WithMany(u => u.ClientInvestment)
                 .HasForeignKey(e => e.UserId)
