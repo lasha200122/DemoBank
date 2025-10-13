@@ -133,10 +133,10 @@ public class AuthController : ControllerBase
                 ));
             }
 
-            if (user.Status == Status.Rejected)
+            if (user.Status != Status.Active)
             {
                 return Unauthorized(ResponseDto<object>.ErrorResponse(
-                    "Account is deactivated. Please contact support."
+                    "Account is not active. Please contact support."
                 ));
             }
 
