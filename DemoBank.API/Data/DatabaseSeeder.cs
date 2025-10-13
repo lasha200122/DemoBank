@@ -35,7 +35,6 @@ public class DatabaseSeeder
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
             FirstName = "System",
             LastName = "Administrator",
-            PhoneNumber = "+1234567890",
             Role = UserRole.Admin,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -94,7 +93,6 @@ public class DatabaseSeeder
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Test123!"),
             FirstName = "John",
             LastName = "Doe",
-            PhoneNumber = "+1234567891",
             Role = UserRole.Client,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
@@ -151,7 +149,6 @@ public class DatabaseSeeder
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Test123!"),
             FirstName = "Jane",
             LastName = "Smith",
-            PhoneNumber = "+1234567892",
             Role = UserRole.Client,
             IsActive = true,
             CreatedAt = DateTime.UtcNow

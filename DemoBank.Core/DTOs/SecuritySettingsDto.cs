@@ -45,7 +45,6 @@ public class UserProfileDto
     public string Email { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
-    public string PhoneNumber { get; set; }
     public string ProfilePictureUrl { get; set; }
     public DateTime MemberSince { get; set; }
     public string AccountStatus { get; set; }
@@ -61,7 +60,6 @@ public class UpdateProfileDto
 {
     public string FirstName { get; set; }
     public string LastName { get; set; }
-    public string PhoneNumber { get; set; }
     public string PreferredCurrency { get; set; }
     public string Language { get; set; }
     public string TimeZone { get; set; }

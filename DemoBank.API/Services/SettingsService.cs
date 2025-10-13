@@ -153,7 +153,6 @@ public class SettingsService : ISettingsService
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,
-            PhoneNumber = user.PhoneNumber,
             ProfilePictureUrl = null, // Would be stored separately
             MemberSince = user.CreatedAt,
             AccountStatus = user.IsActive ? "Active" : "Inactive",
@@ -179,9 +178,6 @@ public class SettingsService : ISettingsService
 
         if (!string.IsNullOrEmpty(profileDto.LastName))
             user.LastName = profileDto.LastName;
-
-        if (!string.IsNullOrEmpty(profileDto.PhoneNumber))
-            user.PhoneNumber = profileDto.PhoneNumber;
 
         user.UpdatedAt = DateTime.UtcNow;
 
@@ -510,7 +506,6 @@ public class SettingsService : ISettingsService
                 user.Email,
                 user.FirstName,
                 user.LastName,
-                user.PhoneNumber,
                 user.CreatedAt
             },
             Accounts = user.Accounts.Select(a => new

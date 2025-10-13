@@ -26,9 +26,6 @@ public class User
     [MaxLength(50)]
     public string LastName { get; set; }
 
-    [Phone]
-    public string PhoneNumber { get; set; }
-
     public UserRole Role { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }

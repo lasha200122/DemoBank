@@ -21,7 +21,4 @@ public class UserRegistrationDto
 
     [Required]
     public string LastName { get; set; }
-
-    [Phone]
-    public string PhoneNumber { get; set; }
 }

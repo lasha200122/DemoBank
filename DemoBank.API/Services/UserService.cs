@@ -56,7 +56,6 @@ public class UserService : IUserService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(registrationDto.Password),
             FirstName = registrationDto.FirstName,
             LastName = registrationDto.LastName,
-            PhoneNumber = registrationDto.PhoneNumber,
             Role = role,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
