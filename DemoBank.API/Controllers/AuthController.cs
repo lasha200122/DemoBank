@@ -133,7 +133,7 @@ public class AuthController : ControllerBase
                 ));
             }
 
-            if (user.Status != Status.Active)
+            if (user.Role == UserRole.Client && user.Status != Status.Active)
             {
                 return Unauthorized(ResponseDto<object>.ErrorResponse(
                     "Account is not active. Please contact support."
