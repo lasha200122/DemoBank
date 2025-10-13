@@ -21,7 +21,13 @@ public class AccountService : IAccountService
         _notificationHelper = notificationHelper;
         _currencyService = currencyService;
     }
-
+    public async Task<List<Account>> GetAccountByUserIdAsync(Guid userId)
+    {
+        return await _context.Accounts
+        .Include(a => a.User)
+        .Where(a => a.UserId == userId) // აი აქ UserId-ზე ფილტრი
+        .ToListAsync();
+    }
     public async Task<Account> GetByIdAsync(Guid accountId)
     {
         return await _context.Accounts

@@ -6,6 +6,7 @@ namespace DemoBank.API.Services;
 public interface IAccountService
 {
     Task<Account> GetByIdAsync(Guid accountId);
+    Task<List<Account>> GetAccountByUserIdAsync(Guid userId);
     Task<Account> GetByAccountNumberAsync(string accountNumber);
     Task<List<Account>> GetUserAccountsAsync(Guid userId);
     Task<List<Account>> GetActiveUserAccountsAsync(Guid userId);

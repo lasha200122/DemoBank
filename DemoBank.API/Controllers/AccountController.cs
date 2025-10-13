@@ -89,6 +89,33 @@ public class AccountController : ControllerBase
             ));
         }
     }
+    [HttpGet("{userId:guid}")]
+    public async Task<IActionResult> GetAccountsByUserId(Guid userId)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+
+            var accounts = await _accountService.GetAccountByUserIdAsync(userId);
+
+            if (accounts == null || !accounts.Any())
+                return NotFound(ResponseDto<object>.ErrorResponse("No accounts found for this user."));
+
+            if (userId != currentUserId && !IsAdmin())
+                return Forbid();
+
+            var accountDtos = _mapper.Map<List<AccountDto>>(accounts);
+
+            return Ok(ResponseDto<List<AccountDto>>.SuccessResponse(accountDtos));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ResponseDto<object>.ErrorResponse(
+                "An error occurred while fetching account list"
+            ));
+        }
+    }
+
 
     // GET: api/Account/{id}/transactions
     [HttpGet("{id}/transactions")]
