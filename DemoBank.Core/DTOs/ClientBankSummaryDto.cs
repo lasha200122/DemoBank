@@ -22,7 +22,6 @@ namespace DemoBank.Core.DTOs
         public DateTime CreatedAt { get; set; }
         public DateTime LastLogin { get; set; }
         public decimal TotalBalanceUSD { get; set; }
-
         public decimal MonthlyReturns { get; set; }
         public decimal YearlyReturns { get; set; }
 

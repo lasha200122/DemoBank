@@ -109,9 +109,60 @@ public class ClientService : IClientService
                 ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
                 TotalBalanceUSD = u.Accounts.Where(a => a.IsActive)
                                             .Sum(a => (decimal?)a.Balance) ?? 0m,
+                BankingDetails = u.BankingDetails
+                    .Select(b => new BankingDetailsItemDto
+                    {
+                        UserId = b.UserId,
+                        BeneficialName = b.BeneficialName,
+                        IBAN = b.IBAN,
+                        Reference = b.Reference,
+                        BIC = b.BIC
+                    })
+                    .ToList()
+            })
+            .AsNoTracking()
+            .ToListAsync();
 
-                MonthlyReturns = 0m,
-                YearlyReturns = 0m,
+        return result;
+    }
+
+    public async Task<List<ClientBankSummaryDto>> GetClientInvestmentSummaryAsync(
+    Guid? guid,
+    decimal yearlyPercent,
+    decimal monthlyPercent)
+    {
+        if (guid is null)
+            return new List<ClientBankSummaryDto>();
+
+        var result = await _context.Users
+            .Where(u => (u.Role == UserRole.Client || u.Role == UserRole.Admin) && u.Id == guid)
+            .Select(u => new ClientBankSummaryDto
+            {
+                ClientId = u.Id,
+                FullName = u.FirstName + " " + u.LastName,
+                Username = u.Username,
+                Email = u.Email,
+                InvestmentRange = (int)(u.PotentialInvestmentRange ?? 0),
+                Status = (int)u.Status,
+                EmailStatus = false,
+                Passkey = u.Passkey,
+                CreatedAt = u.CreatedAt,
+                LastLogin = u.LastLogin,
+                ActiveAccounts = u.Accounts.Count(a => a.IsActive),
+                ActiveInvestments = u.Investments.Count(i => i.Status == InvestmentStatus.Active),
+                ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
+
+                TotalBalanceUSD = u.Accounts
+                    .Where(a => a.IsActive)
+                    .Sum(a => (decimal?)a.Balance) ?? 0m,
+
+                MonthlyReturns = Math.Round(
+                    ((u.Accounts.Where(a => a.IsActive)
+                        .Sum(a => (decimal?)a.Balance) ?? 0m) * monthlyPercent) / 100, 2),
+
+                YearlyReturns = Math.Round(
+                    ((u.Accounts.Where(a => a.IsActive)
+                        .Sum(a => (decimal?)a.Balance) ?? 0m) * yearlyPercent) / 100, 2),
 
                 BankingDetails = u.BankingDetails
                     .Select(b => new BankingDetailsItemDto
@@ -127,7 +178,8 @@ public class ClientService : IClientService
             .AsNoTracking()
             .ToListAsync();
 
-        return result; // თუ იუზერს ბანკინგ-დეტალი არ აქვს, BankingDetails იქნება []
+        return result;
     }
+
 
 }
