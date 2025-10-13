@@ -1,0 +1,41 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DemoBank.Core.DTOs
+{
+    public sealed class ClientBankSummaryDto
+    {
+        public Guid ClientId { get; set; }
+        public string FullName { get; set; } = default!;
+        public string Username { get; set; } = default!;
+        public string Email { get; set; } = default!;
+        public int InvestmentRange { get; set; }
+        public int Status { get; set; }
+        public bool EmailStatus { get; set; }
+        public string? Passkey { get; set; }
+        public int ActiveAccounts { get; set; }
+        public int ActiveInvestments { get; set; }
+        public int ActiveLoans { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime LastLogin { get; set; }
+        public decimal TotalBalanceUSD { get; set; }
+
+        public decimal MonthlyReturns { get; set; }
+        public decimal YearlyReturns { get; set; }
+
+        public List<BankingDetailsItemDto> BankingDetails { get; set; } = new();
+    }
+
+    public sealed class BankingDetailsItemDto
+    {
+        public Guid? UserId { get; set; }
+        public string BeneficialName { get; set; } = default!;
+        public string IBAN { get; set; } = default!;
+        public string Reference { get; set; } = default!;
+        public string BIC { get; set; } = default!;
+    }
+
+}
