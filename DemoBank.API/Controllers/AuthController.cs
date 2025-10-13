@@ -139,7 +139,7 @@ public class AuthController : ControllerBase
                 ));
             }
 
-            user.LastLogin = DateTime.Now;
+            user.LastLogin = DateTime.UtcNow;
             await _userService.UpdateUserAsync(user);
 
             // Generate token
