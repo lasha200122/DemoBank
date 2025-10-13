@@ -1,4 +1,6 @@
-﻿namespace DemoBank.Core.DTOs;
+﻿using DemoBank.Core.Models;
+
+namespace DemoBank.Core.DTOs;
 
 public class AccountDto
 {
@@ -10,4 +12,5 @@ public class AccountDto
     public bool IsPriority { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
+    PotentialInvestmentRange PotentialInvestmentRange { get; set; }
 }

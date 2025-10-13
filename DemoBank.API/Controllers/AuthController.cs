@@ -31,7 +31,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || registrationDto.PotentialInvestmentRange == null)
             {
                 return BadRequest(ResponseDto<object>.ErrorResponse(
                     "Invalid registration data",

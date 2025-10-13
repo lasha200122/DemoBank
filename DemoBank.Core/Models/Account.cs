@@ -16,6 +16,8 @@ public class Account
 
     public AccountType Type { get; set; }
 
+    public PotentialInvestmentRange PotentialInvestmentRange { get; set; }
+
     [Required]
     [MaxLength(3)]
     public string Currency { get; set; } = "USD";
@@ -36,4 +38,11 @@ public enum AccountType
     Checking,
     Savings,
     Investment
+}
+
+public enum PotentialInvestmentRange
+{
+    Tier1_500k_2_5M = 0,
+    Tier2_2_5M_5M = 1,
+    Tier3_5MPlus_Premium = 2
 }

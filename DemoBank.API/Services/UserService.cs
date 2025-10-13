@@ -92,7 +92,8 @@ public class UserService : IUserService
                 Balance = 0,
                 IsPriority = false,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                PotentialInvestmentRange = registrationDto.PotentialInvestmentRange.Value
             };
 
             _context.Accounts.Add(account);

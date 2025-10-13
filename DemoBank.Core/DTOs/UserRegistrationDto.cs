@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using DemoBank.Core.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace DemoBank.Core.DTOs;
 
@@ -21,4 +22,7 @@ public class UserRegistrationDto
 
     [Required]
     public string LastName { get; set; }
+
+    // for client
+    public PotentialInvestmentRange? PotentialInvestmentRange { get; set; }
 }
