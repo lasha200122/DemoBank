@@ -34,16 +34,7 @@ public class ClientService : IClientService
                 ActiveAccounts = u.Accounts.Count(a => a.IsActive),
                 ActiveInvestments = u.Investments.Count(i => i.Status == InvestmentStatus.Active),
                 ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
-                TotalBalanceUSD = u.Accounts.Where(a => a.IsActive).Sum(a => (decimal?)a.Balance) ?? 0,
-                BankingDetails = u.BankingDetails
-                .Select(b => new CreateBankingDetailsDto
-                {
-                    BeneficialName = b.BeneficialName,
-                    IBAN = b.IBAN,
-                    Reference = b.Reference,
-                    BIC = b.BIC
-                })
-                .FirstOrDefault(),
+                TotalBalanceUSD = u.Accounts.Where(a => a.IsActive).Sum(a => (decimal?)a.Balance) ?? 0
             })
             .ToListAsync();
 
