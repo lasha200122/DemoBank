@@ -11,6 +11,7 @@ public class AccountDto
     public decimal Balance { get; set; }
     public bool IsPriority { get; set; }
     public bool IsActive { get; set; }
+    public string Title { get; set; }
     public DateTime CreatedAt { get; set; }
     PotentialInvestmentRange PotentialInvestmentRange { get; set; }
 }

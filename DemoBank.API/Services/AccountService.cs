@@ -92,7 +92,8 @@ public class AccountService : IAccountService
             Balance = 0,
             IsPriority = createDto.IsPriority,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Title = createDto.Title
         };
 
         // If this is set as priority, remove priority from other accounts with same currency

@@ -19,7 +19,7 @@ public class Account
     [Required]
     [MaxLength(3)]
     public string Currency { get; set; } = "USD";
-    public string Title { get; set; }
+    public string Title { get; set; } = "Untitled";
 
     public decimal Balance { get; set; }
     public bool IsPriority { get; set; }
