@@ -45,10 +45,17 @@ public class ClientController : ControllerBase
         if (!success) return NotFound(new { Message = "Client not found" });
         return Ok(new { Message = "Client rejected successfully" });
     }
-    [HttpGet("GetClientInvestement")]
-    public async Task<IActionResult> GetClientInvestement(Guid? guid, decimal yearlyPercent, decimal monthlyPercent)
+    [HttpPost("GetClientInvestement")]
+    public async Task<IActionResult> GetClientInvestement([FromBody] CreateBankInvestmentDto request)
     {
-        var clients = await _clientService.GetClientInvestmentSummaryAsync(guid, yearlyPercent, monthlyPercent);
+        var clients = await _clientService.GetClientInvestmentSummaryAsync(request);
+        return Ok(clients);
+    }
+
+    [HttpGet("GetInvestment")]
+    public async Task<IActionResult> GetClientInvestment(string AccountId)
+    {
+        var clients = await _clientService.GetClientInvestmentAsync(AccountId);
         return Ok(clients);
     }
 

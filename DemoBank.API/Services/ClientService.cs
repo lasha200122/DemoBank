@@ -126,60 +126,98 @@ public class ClientService : IClientService
         return result;
     }
 
-    public async Task<List<ClientBankSummaryDto>> GetClientInvestmentSummaryAsync(
-    Guid? guid,
-    decimal yearlyPercent,
-    decimal monthlyPercent)
+    public async Task<List<ClientBankSummaryDto>> GetClientInvestmentSummaryAsync(CreateBankInvestmentDto request)
     {
-        if (guid is null)
+        if (request.Id == null)
             return new List<ClientBankSummaryDto>();
 
-        var result = await _context.Users
-            .Where(u => (u.Role == UserRole.Client || u.Role == UserRole.Admin) && u.Id == guid)
-            .Select(u => new ClientBankSummaryDto
-            {
-                ClientId = u.Id,
-                FullName = u.FirstName + " " + u.LastName,
-                Username = u.Username,
-                Email = u.Email,
-                InvestmentRange = (int)(u.PotentialInvestmentRange ?? 0),
-                Status = (int)u.Status,
-                EmailStatus = false,
-                Passkey = u.Passkey,
-                CreatedAt = u.CreatedAt,
-                LastLogin = u.LastLogin,
-                ActiveAccounts = u.Accounts.Count(a => a.IsActive),
-                ActiveInvestments = u.Investments.Count(i => i.Status == InvestmentStatus.Active),
-                ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
-
-                TotalBalanceUSD = u.Accounts
-                    .Where(a => a.IsActive)
-                    .Sum(a => (decimal?)a.Balance) ?? 0m,
-
-                MonthlyReturns = Math.Round(
-                    ((u.Accounts.Where(a => a.IsActive)
-                        .Sum(a => (decimal?)a.Balance) ?? 0m) * monthlyPercent) / 100, 2),
-
-                YearlyReturns = Math.Round(
-                    ((u.Accounts.Where(a => a.IsActive)
-                        .Sum(a => (decimal?)a.Balance) ?? 0m) * yearlyPercent) / 100, 2),
-
-                BankingDetails = u.BankingDetails
-                    .Select(b => new BankingDetailsItemDto
-                    {
-                        UserId = b.UserId,
-                        BeneficialName = b.BeneficialName,
-                        IBAN = b.IBAN,
-                        Reference = b.Reference,
-                        BIC = b.BIC
-                    })
-                    .ToList()
-            })
+        var user = await _context.Users
             .AsNoTracking()
-            .ToListAsync();
+            .Include(u => u.Accounts)
+            .Include(u => u.Investments)
+            .Include(u => u.Loans)
+            .Include(u => u.BankingDetails)
+            .Where(u => (u.Role == UserRole.Client || u.Role == UserRole.Admin) && u.Id == request.Id)
+            .FirstOrDefaultAsync();
 
+        if (user is null)
+            return new List<ClientBankSummaryDto>();
+
+        var activeAccounts = user.Accounts?.Where(a => a.IsActive && a.AccountNumber == request.AccountId).ToList() ?? new List<Account>();
+        var bankingDetails = user.BankingDetails?.Select(b => new BankingDetailsItemDto
+        {
+            UserId = b.UserId,
+            BeneficialName = b.BeneficialName,
+            IBAN = b.IBAN,
+            Reference = b.Reference,
+            BIC = b.BIC
+        }).ToList() ?? new List<BankingDetailsItemDto>();
+
+        var activeBalance = activeAccounts.Sum(a => a.Balance);
+
+        var monthlyReturn = Math.Round((activeBalance * request.MonthlyPercent) / 100, 2);
+        var yearlyReturn = Math.Round((activeBalance * request.YearlyPercent) / 100, 2);
+
+        var result = new List<ClientBankSummaryDto>
+{
+    new ClientBankSummaryDto
+    {
+        ClientId = user.Id,
+        FullName = $"{user.FirstName} {user.LastName}",
+        Username = user.Username,
+        Email = user.Email,
+        InvestmentRange = (int)(user.PotentialInvestmentRange ?? 0),
+        Status = (int)user.Status,
+        EmailStatus = false,
+        Passkey = user.Passkey,
+        CreatedAt = user.CreatedAt,
+        LastLogin = user.LastLogin,
+        ActiveAccounts = activeAccounts.Count,
+        ActiveInvestments = user.Investments?.Count(i => i.Status == InvestmentStatus.Active) ?? 0,
+        ActiveLoans = user.Loans?.Count(l => l.Status == LoanStatus.Active) ?? 0,
+        TotalBalanceUSD = activeBalance,
+        MonthlyReturns = monthlyReturn,
+        YearlyReturns = yearlyReturn,
+        BankingDetails = bankingDetails
+    }
+};
+
+        var clientInvestment = new ClientInvestment
+        {
+            Id = Guid.NewGuid(),
+            UserId = request.Id,
+            MonthlyReturn = monthlyReturn,
+            YearlyReturn = yearlyReturn,
+            CreatedAt = DateTime.UtcNow,
+            AccountId = request.AccountId
+        };
+
+
+        _context.ClientInvestment.Add(clientInvestment);
+        await _context.SaveChangesAsync();
         return result;
     }
 
+    public async Task<ClientInvestmentResponse?> GetClientInvestmentAsync(string accountId)
+    {
+        if (string.IsNullOrWhiteSpace(accountId))
+            return null;
+
+        var clientInvestment = await _context.ClientInvestment
+            .Where(u => u.AccountId == accountId)
+            .Select(u => new ClientInvestmentResponse
+            {
+                Id = u.Id,
+                UserId = u.UserId,
+                MonthlyReturn = u.MonthlyReturn,
+                YearlyReturn = u.YearlyReturn,
+                AccountId = u.AccountId,
+                CreatedAt = u.CreatedAt
+            })
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
+
+        return clientInvestment;
+    }
 
 }

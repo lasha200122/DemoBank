@@ -28,6 +28,7 @@ public class DemoBankContext : DbContext
     public DbSet<InvestmentRate> InvestmentRates { get; set; }
     public DbSet<InvestmentTransaction> InvestmentTransactions { get; set; }
     public DbSet<BankingDetails> BankingDetails { get; set; }
+    public DbSet<ClientInvestment> ClientInvestment { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -430,6 +431,26 @@ public class DemoBankContext : DbContext
 
             entity.HasOne(e => e.User)
                 .WithMany(u => u.BankingDetails)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ClientInvestment>(entity =>
+        {
+
+            entity.HasKey(e => e.Id);
+            // Indexes
+            entity.HasIndex(e => e.UserId);
+
+            // Columns
+            entity.Property(e => e.YearlyReturn)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.MonthlyReturn)
+                .IsRequired()
+                .HasMaxLength(50);
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.ClientInvestment)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
