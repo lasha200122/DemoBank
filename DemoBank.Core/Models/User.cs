@@ -27,6 +27,8 @@ public class User
     public string LastName { get; set; }
 
     public PotentialInvestmentRange? PotentialInvestmentRange { get; set; }
+
+    public string? Passkey { get; set; }
     
 
     public UserRole Role { get; set; }

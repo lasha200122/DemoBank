@@ -3,6 +3,7 @@ using DemoBank.API.Helpers;
 using DemoBank.Core.DTOs;
 using DemoBank.Core.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 
 namespace DemoBank.API.Services;
 
@@ -15,6 +16,16 @@ public class UserService : IUserService
     {
         _context = context;
         _notificationHelper = notificationHelper;
+    }
+
+    public async Task<bool> ValidatePasskey(Guid userId, string passkey)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (user == null)
+            return false;
+
+        return user.Passkey == passkey;
     }
 
     public async Task<User> GetByIdAsync(Guid userId)
@@ -38,6 +49,22 @@ public class UserService : IUserService
             .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
     }
 
+    public static string GenerateRandomString(int length)
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var stringChars = new char[length];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            byte[] randomBytes = new byte[length];
+            rng.GetBytes(randomBytes);
+            for (int i = 0; i < stringChars.Length; i++)
+            {
+                stringChars[i] = chars[randomBytes[i] % chars.Length];
+            }
+        }
+        return new string(stringChars);
+    }
+
     public async Task<User> CreateUserAsync(UserRegistrationDto registrationDto, UserRole role = UserRole.Client)
     {
         // Check if username or email already exists
@@ -59,7 +86,8 @@ public class UserService : IUserService
             Role = role,
             Status = Status.Active,
             CreatedAt = DateTime.UtcNow,
-            PotentialInvestmentRange = registrationDto.PotentialInvestmentRange.Value
+            PotentialInvestmentRange = registrationDto.PotentialInvestmentRange.Value,
+            Passkey = role == UserRole.Client ? GenerateRandomString(24) : null
         };
 
         // Create user settings

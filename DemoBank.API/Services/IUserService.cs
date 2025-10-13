@@ -10,6 +10,7 @@ public interface IUserService
     Task<User> GetByEmailAsync(string email);
     Task<User> CreateUserAsync(UserRegistrationDto registrationDto, UserRole role = UserRole.Client);
     Task<bool> ValidatePasswordAsync(User user, string password);
+    Task<bool> ValidatePasskey(Guid userId, string passkey);
     Task<bool> UsernameExistsAsync(string username);
     Task<bool> EmailExistsAsync(string email);
     Task<bool> UpdateUserAsync(User user);

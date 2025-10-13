@@ -5,6 +5,7 @@ using DemoBank.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DemoBank.API.Controllers;
 
@@ -166,6 +167,21 @@ public class AuthController : ControllerBase
                 "An error occurred during login"
             ));
         }
+    }
+
+    [HttpPost("passkey")]
+    [Authorize]
+    public async Task<IActionResult> CheckPasskey([FromQuery] string passkey)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+            throw new UnauthorizedAccessException("User ID not found in token");
+        var isCorrect = await _userService.ValidatePasskey(Guid.Parse(userIdClaim), passkey);
+
+        if (isCorrect == false)
+            return Unauthorized();
+
+        return Ok(true);
     }
 
     [HttpPost("change-password")]
