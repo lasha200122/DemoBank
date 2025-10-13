@@ -1,33 +1,41 @@
-﻿using AutoMapper;
-using DemoBank.API.Services;
-using DemoBank.Core.DTOs;
+﻿using DemoBank.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DemoBank.API.Controllers
+namespace DemoBank.API.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+[Authorize(Roles = "Admin")]
+public class ClientController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize(Roles = "Admin")]
-    public class ClientController : ControllerBase
+    private readonly IClientService _clientService;
+
+    public ClientController(IClientService clientService)
     {
-        private readonly IClientService _clientService;
-        private readonly IMapper _mapper;
+        _clientService = clientService;
+    }
 
-        public ClientController(IClientService clientService, IMapper mapper)
-        {
-            _clientService = clientService;
-            _mapper = mapper;
-        }
+    [HttpGet]
+    public async Task<IActionResult> GetClientList()
+    {
+        var clients = await _clientService.GetClientList();
+        return Ok(clients);
+    }
 
-        [HttpGet]
-        public async Task<List<AdminClientListDto>> GetClientList()
-        {
-            var clients = await _clientService.GetClientList();
+    [HttpPut("approve")]
+    public async Task<IActionResult> ApproveClient([FromQuery] Guid clientId)
+    {
+        var success = await _clientService.ApproveClient(clientId);
+        if (!success) return NotFound(new { Message = "Client not found" });
+        return Ok(new { Message = "Client approved successfully" });
+    }
 
-            var clientDtos = _mapper.Map<List<AdminClientListDto>>(clients);
-
-            return clientDtos;
-        }
+    [HttpPut("reject")]
+    public async Task<IActionResult> RejectClient([FromQuery] Guid clientId)
+    {
+        var success = await _clientService.RejectClient(clientId);
+        if (!success) return NotFound(new { Message = "Client not found" });
+        return Ok(new { Message = "Client rejected successfully" });
     }
 }

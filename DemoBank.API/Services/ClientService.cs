@@ -40,4 +40,26 @@ public class ClientService : IClientService
 
         return clients;
     }
+
+    public async Task<bool> ApproveClient(Guid userId)
+    {
+        var client = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (client == null)
+            return false;
+
+        client.Status = Status.Active;
+        return await _context.SaveChangesAsync() > 0;
+    }
+
+    public async Task<bool> RejectClient(Guid userId)
+    {
+        var client = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+        if (client == null)
+            return false;
+
+        client.Status = Status.Rejected;
+        return await _context.SaveChangesAsync() > 0;
+    }
 }
