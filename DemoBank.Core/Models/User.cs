@@ -26,6 +26,8 @@ public class User
     [MaxLength(50)]
     public string LastName { get; set; }
 
+    public PotentialInvestmentRange? PotentialInvestmentRange { get; set; }
+
     public UserRole Role { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }

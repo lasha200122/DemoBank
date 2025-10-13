@@ -16,8 +16,6 @@ public class Account
 
     public AccountType Type { get; set; }
 
-    public PotentialInvestmentRange PotentialInvestmentRange { get; set; }
-
     [Required]
     [MaxLength(3)]
     public string Currency { get; set; } = "USD";

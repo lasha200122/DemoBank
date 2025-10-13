@@ -58,7 +58,8 @@ public class UserService : IUserService
             LastName = registrationDto.LastName,
             Role = role,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            PotentialInvestmentRange = registrationDto.PotentialInvestmentRange.Value
         };
 
         // Create user settings
@@ -92,8 +93,7 @@ public class UserService : IUserService
                 Balance = 0,
                 IsPriority = false,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                PotentialInvestmentRange = registrationDto.PotentialInvestmentRange.Value
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Accounts.Add(account);
