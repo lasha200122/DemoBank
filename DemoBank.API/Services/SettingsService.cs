@@ -155,7 +155,7 @@ public class SettingsService : ISettingsService
             LastName = user.LastName,
             ProfilePictureUrl = null, // Would be stored separately
             MemberSince = user.CreatedAt,
-            AccountStatus = user.IsActive ? "Active" : "Inactive",
+            AccountStatus = user.Status,
             VerificationStatus = "Verified", // Simulated
             AccountsCount = accountCount,
             TransactionsCount = transactionCount,
@@ -545,7 +545,7 @@ public class SettingsService : ISettingsService
 
         // Notify admins
         var admins = await _context.Users
-            .Where(u => u.Role == UserRole.Admin && u.IsActive)
+            .Where(u => u.Role == UserRole.Admin && u.Status == Status.Active)
             .ToListAsync();
 
         foreach (var admin in admins)
@@ -603,7 +603,7 @@ public class SettingsService : ISettingsService
         {
             // Notify all users about maintenance
             var activeUsers = await _context.Users
-                .Where(u => u.IsActive)
+                .Where(u => u.Status == Status.Active)
                 .Select(u => u.Id)
                 .ToListAsync();
 

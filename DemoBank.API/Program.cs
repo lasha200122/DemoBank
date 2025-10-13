@@ -191,6 +191,9 @@ builder.Services.AddScoped<IInvestmentService, InvestmentService>();
 builder.Services.AddScoped<IInvestmentAdminService, InvestmentAdminService>();
 builder.Services.AddScoped<IInvestmentCalculatorService, InvestmentCalculatorService>();
 
+// admin client service
+builder.Services.AddScoped<IClientService, ClientService>();
+
 
 builder.Services.AddSingleton<StockDataFetcher>();
 builder.Services.AddSingleton<StockDataBackgroundWorker>();

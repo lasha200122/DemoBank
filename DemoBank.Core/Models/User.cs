@@ -27,9 +27,11 @@ public class User
     public string LastName { get; set; }
 
     public PotentialInvestmentRange? PotentialInvestmentRange { get; set; }
+    
 
     public UserRole Role { get; set; }
-    public bool IsActive { get; set; } = true;
+    public Status Status { get; set; }
+    public DateTime LastLogin { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 
@@ -45,4 +47,11 @@ public enum UserRole
 {
     Client,
     Admin
+}
+
+public enum Status
+{
+    Pending = 0,
+    Active = 1,
+    Rejected = 2
 }

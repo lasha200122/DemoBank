@@ -153,7 +153,7 @@ public class NotificationService : INotificationService
             {
                 // Broadcast to all active users
                 var activeUsers = await _context.Users
-                    .Where(u => u.IsActive)
+                    .Where(u => u.Status == Status.Active)
                     .Select(u => u.Id)
                     .ToListAsync();
 

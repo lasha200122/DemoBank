@@ -36,7 +36,7 @@ public class DatabaseSeeder
             FirstName = "System",
             LastName = "Administrator",
             Role = UserRole.Admin,
-            IsActive = true,
+            Status = Status.Active,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -94,7 +94,7 @@ public class DatabaseSeeder
             FirstName = "John",
             LastName = "Doe",
             Role = UserRole.Client,
-            IsActive = true,
+            Status = Status.Active,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -150,7 +150,7 @@ public class DatabaseSeeder
             FirstName = "Jane",
             LastName = "Smith",
             Role = UserRole.Client,
-            IsActive = true,
+            Status = Status.Active,
             CreatedAt = DateTime.UtcNow
         };
 

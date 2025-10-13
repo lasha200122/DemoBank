@@ -88,7 +88,7 @@ public class LoanService : ILoanService
 
         // Notify admin
         var admins = await _context.Users
-            .Where(u => u.Role == UserRole.Admin && u.IsActive)
+            .Where(u => u.Role == UserRole.Admin && u.Status == Status.Active)
             .ToListAsync();
 
         foreach (var admin in admins)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DemoBank.Core.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -47,7 +48,7 @@ public class UserProfileDto
     public string LastName { get; set; }
     public string ProfilePictureUrl { get; set; }
     public DateTime MemberSince { get; set; }
-    public string AccountStatus { get; set; }
+    public Status AccountStatus { get; set; }
     public string VerificationStatus { get; set; }
     public int AccountsCount { get; set; }
     public int TransactionsCount { get; set; }

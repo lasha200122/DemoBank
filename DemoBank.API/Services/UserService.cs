@@ -57,7 +57,7 @@ public class UserService : IUserService
             FirstName = registrationDto.FirstName,
             LastName = registrationDto.LastName,
             Role = role,
-            IsActive = true,
+            Status = Status.Active,
             CreatedAt = DateTime.UtcNow,
             PotentialInvestmentRange = registrationDto.PotentialInvestmentRange.Value
         };

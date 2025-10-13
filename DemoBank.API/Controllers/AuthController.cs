@@ -132,12 +132,15 @@ public class AuthController : ControllerBase
                 ));
             }
 
-            if (!user.IsActive)
+            if (user.Status == Status.Rejected)
             {
                 return Unauthorized(ResponseDto<object>.ErrorResponse(
                     "Account is deactivated. Please contact support."
                 ));
             }
+
+            user.LastLogin = DateTime.Now;
+            await _userService.UpdateUserAsync(user);
 
             // Generate token
             var token = _jwtService.GenerateToken(user);
