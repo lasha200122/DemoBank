@@ -108,31 +108,31 @@ public class AccountService : IAccountService
         _context.Accounts.Add(account);
 
         // Handle initial deposit if provided
-        if (createDto.InitialDeposit > 0)
-        {
-            var transaction = new Transaction
-            {
-                Id = Guid.NewGuid(),
-                AccountId = account.Id,
-                Type = TransactionType.Deposit,
-                Amount = createDto.InitialDeposit,
-                Currency = account.Currency,
-                AmountInAccountCurrency = createDto.InitialDeposit,
-                Description = "Initial deposit",
-                BalanceAfter = createDto.InitialDeposit,
-                Status = TransactionStatus.Completed,
-                CreatedAt = DateTime.UtcNow
-            };
+        //if (createDto.InitialDeposit > 0)
+        //{
+        //    var transaction = new Transaction
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        AccountId = account.Id,
+        //        Type = TransactionType.Deposit,
+        //        Amount = createDto.InitialDeposit,
+        //        Currency = account.Currency,
+        //        AmountInAccountCurrency = createDto.InitialDeposit,
+        //        Description = "Initial deposit",
+        //        BalanceAfter = createDto.InitialDeposit,
+        //        Status = TransactionStatus.Completed,
+        //        CreatedAt = DateTime.UtcNow
+        //    };
 
-            account.Balance = createDto.InitialDeposit;
-            _context.Transactions.Add(transaction);
-        }
+        //    account.Balance = createDto.InitialDeposit;
+        //    _context.Transactions.Add(transaction);
+        //}
 
         // Send notification
         await _notificationHelper.CreateNotification(
             userId,
             "New Account Created",
-            $"Your new {accountType} account ({accountNumber}) has been created successfully with {currency.Symbol}{createDto.InitialDeposit:N2} initial deposit.",
+            $"Your new {accountType} account ({accountNumber}) has been created successfully.",
             NotificationType.Success
         );
 

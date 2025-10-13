@@ -11,6 +11,7 @@ public class CreateAccountDto
     [MaxLength(3)]
     public string Currency { get; set; } = "USD";
 
-    public decimal InitialDeposit { get; set; }
+    public string Title { get; set; }
+    //public decimal InitialDeposit { get; set; }
     public bool IsPriority { get; set; }
 }
