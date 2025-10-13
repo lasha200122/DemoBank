@@ -23,6 +23,12 @@ public class ClientController : ControllerBase
         var clients = await _clientService.GetClientList();
         return Ok(clients);
     }
+    [HttpGet("ID")]
+    public async Task<IActionResult> GetClientListById(Guid? guid)
+    {
+        var clients = await _clientService.GetClientListById(guid);
+        return Ok(clients);
+    }
 
     [HttpPut("approve")]
     public async Task<IActionResult> ApproveClient([FromQuery] Guid clientId)
@@ -40,7 +46,7 @@ public class ClientController : ControllerBase
         return Ok(new { Message = "Client rejected successfully" });
     }
 
-    // POST: api/Account
+
     [HttpPost("Banking-details")]
     public async Task<IActionResult> BankingDetails([FromBody] CreateBankingDetailsDto createDto)
     {

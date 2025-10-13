@@ -84,4 +84,39 @@ public class ClientService : IClientService
         return await _context.SaveChangesAsync() > 0;
 
     }
+
+    public async Task<List<BankingDetailsDto>> GetClientListById(Guid? guid)
+    {
+        if (guid == null)
+            return new List<BankingDetailsDto>();
+
+        var clients = await _context.Users
+            .Where(u => (u.Role == UserRole.Client || u.Role == UserRole.Admin) && u.Id == guid)
+            .SelectMany(u => u.BankingDetails.Select(b => new BankingDetailsDto
+            {
+                ClientId = u.Id,
+                FullName = u.FirstName + " " + u.LastName,
+                Username = u.Username,
+                Email = u.Email,
+                InvestmentRange = u.PotentialInvestmentRange ?? 0,
+                Status = u.Status,
+                EmailStatus = false,
+                Passkey = u.Passkey,
+                CreatedAt = u.CreatedAt,
+                LastLogin = u.LastLogin,
+                ActiveAccounts = u.Accounts.Count(a => a.IsActive),
+                ActiveInvestments = u.Investments.Count(i => i.Status == InvestmentStatus.Active),
+                ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
+                TotalBalanceUSD = u.Accounts.Where(a => a.IsActive).Sum(a => (decimal?)a.Balance) ?? 0,
+                UserId = b.UserId,
+                BeneficialName = b.BeneficialName,
+                IBAN = b.IBAN,
+                Reference = b.Reference,
+                BIC = b.BIC
+            }))
+            .ToListAsync();
+
+        return clients;
+    }
+
 }
