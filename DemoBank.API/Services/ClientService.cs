@@ -90,13 +90,66 @@ public class ClientService : IClientService
         if (guid is null)
             return new List<ClientBankSummaryDto>();
 
-        var investments = await _context.ClientInvestment.CountAsync(c => c.UserId == guid);
-        var result = await _context.Users
+        var clientInvestments = await _context.ClientInvestment
+            .Where(ci => ci.UserId == guid)
+            .ToListAsync();
+
+        var users = await _context.Users
             .Where(u => (u.Role == UserRole.Client || u.Role == UserRole.Admin) && u.Id == guid)
-            .Select(u => new ClientBankSummaryDto
+            .Include(u => u.Accounts)
+            .Include(u => u.Loans)
+            .Include(u => u.BankingDetails)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var result = users.Select(u =>
+        {
+            var activeAccounts = u.Accounts.Where(a => a.IsActive).ToList();
+
+            var totalBalanceUSD = activeAccounts
+                .Where(a => a.Currency == "USD")
+                .Sum(a => a.Balance);
+
+            var totalBalanceEUR = activeAccounts
+                .Where(a => a.Currency == "EUR")
+                .Sum(a => a.Balance);
+
+            var monthlyReturnsUSD = activeAccounts
+                .Where(a => a.Currency == "USD")
+                .Join(clientInvestments,
+                      a => a.Id.ToString(),         
+                      ci => ci.AccountId, 
+                      (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
+                .Sum();
+
+            var yearlyReturnsUSD = activeAccounts
+                .Where(a => a.Currency == "USD")
+                .Join(clientInvestments,
+                      a => a.Id.ToString(),
+                      ci => ci.AccountId,
+                      (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
+                .Sum();
+
+            var monthlyReturnsEUR = activeAccounts
+                .Where(a => a.Currency == "EUR")
+                .Join(clientInvestments,
+                      a => a.Id.ToString(),
+                      ci => ci.AccountId,
+                      (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
+                .Sum();
+
+            var yearlyReturnsEUR = activeAccounts
+                .Where(a => a.Currency == "EUR")
+                .Join(clientInvestments,
+                      a => a.Id.ToString(),
+                      ci => ci.AccountId,
+                      (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
+                .Sum();
+
+            return new ClientBankSummaryDto
             {
                 ClientId = u.Id,
-                FullName = u.FirstName + " " + u.LastName,
+                FullName = $"{u.FirstName} {u.LastName}",
                 Username = u.Username,
                 Email = u.Email,
                 InvestmentRange = (int)(u.PotentialInvestmentRange ?? 0),
@@ -105,60 +158,28 @@ public class ClientService : IClientService
                 Passkey = u.Passkey,
                 CreatedAt = u.CreatedAt,
                 LastLogin = u.LastLogin,
-                ActiveAccounts = u.Accounts.Count(a => a.IsActive),
-                ActiveInvestments = investments,
+                ActiveAccounts = activeAccounts.Count,
+                ActiveInvestments = clientInvestments.Count,
                 ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
-                TotalBalanceUSD = u.Accounts
-                   .Where(a => a.IsActive && a.Currency == "USD")
-                   .Sum(a => (decimal?)a.Balance) ?? 0m,
-                TotalBalanceEUR = u.Accounts
-                   .Where(a => a.IsActive && a.Currency == "EUR")
-                   .Sum(a => (decimal?)a.Balance) ?? 0m,
-                MonthlyReturnsUSD = u.Accounts
-                    .Where(a => a.IsActive && a.Currency == "USD")
-                    .Join(_context.ClientInvestment,
-                          a => a.AccountNumber,
-                          ci => ci.AccountId,
-                          (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
-                    .Sum(),
-                YearlyReturnsUSD = u.Accounts
-                    .Where(a => a.IsActive && a.Currency == "USD")
-                    .Join(_context.ClientInvestment,
-                          a => a.AccountNumber,
-                          ci => ci.AccountId,
-                          (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
-                    .Sum(),
-                MonthlyReturnsEUR = u.Accounts
-                    .Where(a => a.IsActive && a.Currency == "EUR")
-                    .Join(_context.ClientInvestment,
-                          a => a.AccountNumber,
-                          ci => ci.AccountId,
-                          (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
-                    .Sum(),
-                YearlyReturnsEUR = u.Accounts
-                    .Where(a => a.IsActive && a.Currency == "EUR")
-                    .Join(_context.ClientInvestment,
-                          a => a.AccountNumber,
-                          ci => ci.AccountId,
-                          (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
-                    .Sum(),
-                BankingDetails = u.BankingDetails
-                    .Select(b => new BankingDetailsItemDto
-                    {
-                        UserId = b.UserId,
-                        BeneficialName = b.BeneficialName,
-                        IBAN = b.IBAN,
-                        Reference = b.Reference,
-                        BIC = b.BIC
-                    })
-                    .ToList()
-            })
-            .AsNoTracking()
-            .ToListAsync();
+                TotalBalanceUSD = totalBalanceUSD,
+                TotalBalanceEUR = totalBalanceEUR,
+                MonthlyReturnsUSD = Math.Round(monthlyReturnsUSD, 2),
+                YearlyReturnsUSD = Math.Round(yearlyReturnsUSD, 2),
+                MonthlyReturnsEUR = Math.Round(monthlyReturnsEUR, 2),
+                YearlyReturnsEUR = Math.Round(yearlyReturnsEUR, 2),
+                BankingDetails = u.BankingDetails.Select(b => new BankingDetailsItemDto
+                {
+                    UserId = b.UserId,
+                    BeneficialName = b.BeneficialName,
+                    IBAN = b.IBAN,
+                    Reference = b.Reference,
+                    BIC = b.BIC
+                }).ToList()
+            };
+        }).ToList();
 
         return result;
     }
-
 
     public async Task<bool> GetClientInvestmentSummaryAsync(CreateBankInvestmentDto request)
     {
