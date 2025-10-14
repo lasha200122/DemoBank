@@ -30,13 +30,10 @@ namespace DemoBank.Core.DTOs
 
     public class BankAccountDetails
     {
-        [Required]
         public string AccountNumber { get; set; }
 
-        [Required]
         public string RoutingNumber { get; set; }
 
-        [Required]
         [MaxLength(100)]
         public string AccountHolderName { get; set; }
 
@@ -44,7 +41,6 @@ namespace DemoBank.Core.DTOs
 
     public class CryptocurrencyDetails
     {
-        [Required]
         [MaxLength(100)]
         [RegularExpression(@"^(0x[a-fA-F0-9]{40}|[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-zA-HJ-NP-Z0-9]{11,71})$",
             ErrorMessage = "Invalid wallet address format.")]
@@ -58,11 +54,9 @@ namespace DemoBank.Core.DTOs
 
     public class IbanDetails
     {
-        [Required]
         [MaxLength(100)]
         public string BeneficialName { get; set; }
 
-        [Required]
         [MaxLength(34)]
         [RegularExpression(@"^[A-Z]{2}\d{2}[A-Z0-9]{1,30}$", ErrorMessage = "Invalid IBAN format.")]
         public string IBAN { get; set; }
