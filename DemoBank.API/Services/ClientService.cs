@@ -16,7 +16,11 @@ public class ClientService : IClientService
 
     public async Task<List<AdminClientListDto>> GetClientList()
     {
-        // TODO
+        var investmentCounts = await _context.ClientInvestment
+            .GroupBy(ci => ci.UserId)
+            .Select(g => new { UserId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.UserId, x => x.Count);
+
         var clients = await _context.Users
             .Where(u => u.Role == UserRole.Client)
             .Select(u => new AdminClientListDto
@@ -32,9 +36,10 @@ public class ClientService : IClientService
                 CreatedAt = u.CreatedAt,
                 LastLogin = u.LastLogin,
                 ActiveAccounts = u.Accounts.Count(a => a.IsActive),
-                ActiveInvestments = u.Investments.Count(i => i.Status == InvestmentStatus.Active),
+                ActiveInvestments = investmentCounts.ContainsKey(u.Id) ? investmentCounts[u.Id] : 0,
                 ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
-                TotalBalanceUSD = u.Accounts.Where(a => a.IsActive).Sum(a => (decimal?)a.Balance) ?? 0
+                TotalBalanceUSD = u.Accounts.Where(a => a.IsActive && a.Currency == "USD").Sum(a => (decimal?)a.Balance) ?? 0m,
+                TotalBalanceEUR = u.Accounts.Where(a => a.IsActive && a.Currency == "EUR").Sum(a => (decimal?)a.Balance) ?? 0m
             })
             .ToListAsync();
 
