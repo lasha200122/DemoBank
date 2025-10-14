@@ -36,6 +36,10 @@ public class EnhancedAccountSummaryDto
     public Dictionary<string, decimal> BalancesByCurrency { get; set; }
     public decimal BalanceTrend { get; set; } // Percentage change
     public string PrimaryAccount { get; set; }
+    public decimal MonthlyReturnsUSD { get; set; }
+    public decimal YearlyReturnsUSD { get; set; }
+    public decimal MonthlyReturnsEUR { get; set; }
+    public decimal YearlyReturnsEUR { get; set; }
 }
 
 public class TransactionMetricsDto

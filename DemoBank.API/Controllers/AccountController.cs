@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using DemoBank.API.Data;
 using DemoBank.API.Services;
 using DemoBank.Core.DTOs;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace DemoBank.API.Controllers;
 
@@ -15,6 +17,7 @@ public class AccountController : ControllerBase
 {
     private readonly IAccountService _accountService;
     private readonly IMapper _mapper;
+    private readonly DemoBankContext _context;
 
     public AccountController(IAccountService accountService, IMapper mapper)
     {
@@ -157,7 +160,7 @@ public class AccountController : ControllerBase
                 ));
             }
 
-            var userId = createDto.UserId != null? createDto.UserId : GetCurrentUserId();
+            var userId = createDto.UserId != null ? createDto.UserId : GetCurrentUserId();
             var account = await _accountService.CreateAccountAsync((Guid)userId, createDto);
             var accountDto = _mapper.Map<AccountDto>(account);
 
@@ -289,13 +292,55 @@ public class AccountController : ControllerBase
             var balancesByCurrency = await _accountService.GetBalancesByCurrencyAsync(userId);
             var accounts = await _accountService.GetActiveUserAccountsAsync(userId);
 
+            var clientInvestments = await _context.ClientInvestment
+              .Where(ci => ci.UserId == userId)
+              .ToListAsync();
+
+            // Monthly and yearly returns
+            var monthlyReturnsUSD = accounts
+                .Where(a => a.Currency == "USD")
+                .Join(clientInvestments,
+                      a => a.Id.ToString(),
+                      ci => ci.AccountId,
+                      (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
+                .Sum();
+
+            var yearlyReturnsUSD = accounts
+                .Where(a => a.Currency == "USD")
+                .Join(clientInvestments,
+                      a => a.Id.ToString(),
+                      ci => ci.AccountId,
+                      (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
+                .Sum();
+
+            var monthlyReturnsEUR = accounts
+                .Where(a => a.Currency == "EUR")
+                .Join(clientInvestments,
+                      a => a.Id.ToString(),
+                      ci => ci.AccountId,
+                      (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
+                .Sum();
+
+            var yearlyReturnsEUR = accounts
+                .Where(a => a.Currency == "EUR")
+                .Join(clientInvestments,
+                      a => a.Id.ToString(),
+                      ci => ci.AccountId,
+                      (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
+                .Sum();
+
+
             var summary = new AccountSummaryDto
             {
                 TotalBalanceUSD = totalInUSD,
                 BalancesByCurrency = balancesByCurrency,
                 TotalAccounts = accounts.Count,
                 ActiveAccounts = accounts.Count(a => a.IsActive),
-                Accounts = _mapper.Map<List<AccountDto>>(accounts)
+                Accounts = _mapper.Map<List<AccountDto>>(accounts),
+                MonthlyReturnsEUR = monthlyReturnsEUR,
+                MonthlyReturnsUSD = monthlyReturnsUSD,
+                YearlyReturnsEUR = yearlyReturnsEUR,
+                YearlyReturnsUSD = yearlyReturnsUSD
             };
 
             return Ok(ResponseDto<AccountSummaryDto>.SuccessResponse(summary));

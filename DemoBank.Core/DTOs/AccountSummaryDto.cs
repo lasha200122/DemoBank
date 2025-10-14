@@ -13,4 +13,8 @@ public class AccountSummaryDto
     public int TotalAccounts { get; set; }
     public int ActiveAccounts { get; set; }
     public List<AccountDto> Accounts { get; set; }
+    public decimal MonthlyReturnsUSD { get; set; }
+    public decimal YearlyReturnsUSD { get; set; }
+    public decimal MonthlyReturnsEUR { get; set; }
+    public decimal YearlyReturnsEUR { get; set; }
 }
