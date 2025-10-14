@@ -89,7 +89,8 @@ public class AccountController : ControllerBase
             ));
         }
     }
-    [HttpGet("{userId:guid}")]
+
+    [HttpGet("user/{userId:guid}")]
     public async Task<IActionResult> GetAccountsByUserId(Guid userId)
     {
         try
