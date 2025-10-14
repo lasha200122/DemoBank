@@ -151,7 +151,7 @@ public class ClientService : IClientService
             throw new InvalidOperationException($"An investment already exists for AccountId {request.AccountId}.");
         }
 
-        var activeAccounts = user.Accounts?.Where(a => a.IsActive && a.AccountNumber == request.AccountId).ToList() ?? new List<Account>();
+        var activeAccounts = user.Accounts?.Where(a => a.IsActive && a.Id.ToString() == request.AccountId).ToList() ?? new List<Account>();
         var bankingDetails = user.BankingDetails?.Select(b => new BankingDetailsItemDto
         {
             UserId = b.UserId,
