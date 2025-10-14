@@ -16,13 +16,6 @@ public class TopUpService : ITopUpService
     private readonly ILogger<TopUpService> _logger;
     private readonly IClientService _clientService;
 
-    // Fee structure for different payment methods
-    private readonly Dictionary<PaymentMethod, (decimal percentage, decimal minimum, decimal maximum)> _feeStructure = new()
-    {
-        { PaymentMethod.CreditCard, (0.029m, 0.50m, 100m) },      // 2.9% + min $0.50, max $100
-        { PaymentMethod.BankTransfer, (0.005m, 1.00m, 25m) },     // 0.5% + min $1.00, max $25
-    };
-
     // Daily and monthly limits
     private const decimal DAILY_TOPUP_LIMIT = 10000m;
     private const decimal MONTHLY_TOPUP_LIMIT = 50000m;
@@ -273,23 +266,6 @@ public class TopUpService : ITopUpService
                     $"Top-up would exceed limits. Daily remaining: ${limits.RemainingToday:N2}, Monthly remaining: ${limits.RemainingThisMonth:N2}");
             }
 
-            // Validate payment method
-            //var validationResult = await ValidatePaymentMethodAsync(new ValidatePaymentMethodDto
-            //{
-            //    PaymentMethod = topUpDto.PaymentMethod,
-            //    CardDetails = topUpDto.CardDetails,
-            //    BankDetails = topUpDto.BankDetails,
-            //    PayPalDetails = topUpDto.PayPalDetails
-            //});
-
-            //if (!validationResult.IsValid)
-            //    throw new InvalidOperationException($"Payment validation failed: {string.Join(", ", validationResult.Errors)}");
-
-            // Calculate fees
-            var fee = CalculateProcessingFee(topUpDto.Amount, topUpDto.PaymentMethod);
-            var totalCharged = topUpDto.Amount + fee;
-
-            // Process payment with external payment provider (simulated)
             var paymentResult = await ProcessPaymentAsync(topUpDto);
             if (!paymentResult.Success)
                 throw new InvalidOperationException($"Payment processing failed: {paymentResult.Message}");
@@ -333,31 +309,6 @@ public class TopUpService : ITopUpService
 
             _context.Transactions.Add(topUpTransaction);
 
-            // Create fee transaction if applicable
-            if (fee > 0)
-            {
-                var feeInAccountCurrency = topUpDto.Currency.ToUpper() != account.Currency
-                    ? await _currencyService.ConvertCurrencyAsync(fee, topUpDto.Currency, account.Currency)
-                    : fee;
-
-                var feeTransaction = new Transaction
-                {
-                    Id = Guid.NewGuid(),
-                    AccountId = account.Id,
-                    Type = TransactionType.Fee,
-                    Amount = fee,
-                    Currency = topUpDto.Currency.ToUpper(),
-                    AmountInAccountCurrency = feeInAccountCurrency,
-                    Description = $"Top-up processing fee ({topUpDto.PaymentMethod})",
-                    BalanceAfter = account.Balance,
-                    Status = TransactionStatus.Completed,
-                    RelatedTransactionId = topUpTransaction.Id,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                _context.Transactions.Add(feeTransaction);
-            }
-
             await _context.SaveChangesAsync();
 
             // Send notification
@@ -365,8 +316,7 @@ public class TopUpService : ITopUpService
             await _notificationHelper.CreateNotification(
                 userId,
                 "Account Top-Up Successful",
-                $"Your account {account.AccountNumber} has been topped up with {currencyInfo.Symbol}{amountInAccountCurrency:N2}. " +
-                $"Processing fee: {currencyInfo.Symbol}{fee:N2}. New balance: {currencyInfo.Symbol}{account.Balance:N2}",
+                $"Your account {account.AccountNumber} has been topped up with {currencyInfo.Symbol}{amountInAccountCurrency:N2}. ",
                 NotificationType.Transaction
             );
 
@@ -379,8 +329,8 @@ public class TopUpService : ITopUpService
                 AccountNumber = account.AccountNumber,
                 Amount = topUpDto.Amount,
                 Currency = topUpDto.Currency,
-                ProcessingFee = fee,
-                TotalCharged = totalCharged,
+                ProcessingFee = 0,
+                TotalCharged = topUpDto.Amount,
                 NewBalance = account.Balance,
                 PaymentMethod = topUpDto.PaymentMethod,
                 ReferenceNumber = GenerateReferenceNumber(),
@@ -415,24 +365,6 @@ public class TopUpService : ITopUpService
     public async Task<List<PaymentMethodInfoDto>> GetAvailablePaymentMethodsAsync()
     {
         var methods = new List<PaymentMethodInfoDto>();
-
-        foreach (var method in Enum.GetValues<PaymentMethod>())
-        {
-            if (_feeStructure.TryGetValue(method, out var fees))
-            {
-                methods.Add(new PaymentMethodInfoDto
-                {
-                    Method = method,
-                    DisplayName = GetPaymentMethodDisplayName(method),
-                    Icon = GetPaymentMethodIcon(method),
-                    FeePercentage = fees.percentage * 100,
-                    MinimumFee = fees.minimum,
-                    MaximumFee = fees.maximum,
-                    IsActive = IsPaymentMethodActive(method),
-                    EstimatedProcessingTime = GetEstimatedProcessingTime(method)
-                });
-            }
-        }
 
         return await Task.FromResult(methods);
     }
@@ -625,21 +557,6 @@ public class TopUpService : ITopUpService
     // Helper methods
     private decimal CalculateProcessingFee(decimal amount, PaymentMethod paymentMethod)
     {
-        if (_feeStructure.TryGetValue(paymentMethod, out var fees))
-        {
-            var calculatedFee = amount * fees.percentage;
-
-            // Apply minimum fee
-            if (calculatedFee < fees.minimum)
-                calculatedFee = fees.minimum;
-
-            // Apply maximum fee
-            if (calculatedFee > fees.maximum)
-                calculatedFee = fees.maximum;
-
-            return Math.Round(calculatedFee, 2);
-        }
-
         return 0;
     }
 
@@ -675,10 +592,6 @@ public class TopUpService : ITopUpService
 
     private string GetFeeExplanation(PaymentMethod method)
     {
-        if (_feeStructure.TryGetValue(method, out var fees))
-        {
-            return $"{fees.percentage * 100:N1}% processing fee (min ${fees.minimum:N2}, max ${fees.maximum:N2})";
-        }
         return "No processing fee";
     }
 
