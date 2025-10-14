@@ -53,9 +53,9 @@ public class ClientController : ControllerBase
     {
         try
         {
-            var clients = await _clientService.GetClientInvestmentSummaryAsync(request);
+            var created = await _clientService.GetClientInvestmentSummaryAsync(request);
 
-            return Ok(clients);
+            return Ok(created);
         }
         catch (InvalidOperationException ex)
         {

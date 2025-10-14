@@ -107,8 +107,40 @@ public class ClientService : IClientService
                 ActiveAccounts = u.Accounts.Count(a => a.IsActive),
                 ActiveInvestments = u.Investments.Count(i => i.Status == InvestmentStatus.Active),
                 ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
-                TotalBalanceUSD = u.Accounts.Where(a => a.IsActive)
-                                            .Sum(a => (decimal?)a.Balance) ?? 0m,
+                TotalBalanceUSD = u.Accounts
+                   .Where(a => a.IsActive && a.Currency == "USD")
+                   .Sum(a => (decimal?)a.Balance) ?? 0m,
+                TotalBalanceEUR = u.Accounts
+                   .Where(a => a.IsActive && a.Currency == "EUR")
+                   .Sum(a => (decimal?)a.Balance) ?? 0m,
+                MonthlyReturnsUSD = u.Accounts
+                    .Where(a => a.IsActive && a.Currency == "USD")
+                    .Join(_context.ClientInvestment,
+                          a => a.AccountNumber,
+                          ci => ci.AccountId,
+                          (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
+                    .Sum(),
+                YearlyReturnsUSD = u.Accounts
+                    .Where(a => a.IsActive && a.Currency == "USD")
+                    .Join(_context.ClientInvestment,
+                          a => a.AccountNumber,
+                          ci => ci.AccountId,
+                          (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
+                    .Sum(),
+                MonthlyReturnsEUR = u.Accounts
+                    .Where(a => a.IsActive && a.Currency == "EUR")
+                    .Join(_context.ClientInvestment,
+                          a => a.AccountNumber,
+                          ci => ci.AccountId,
+                          (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
+                    .Sum(),
+                YearlyReturnsEUR = u.Accounts
+                    .Where(a => a.IsActive && a.Currency == "EUR")
+                    .Join(_context.ClientInvestment,
+                          a => a.AccountNumber,
+                          ci => ci.AccountId,
+                          (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
+                    .Sum(),
                 BankingDetails = u.BankingDetails
                     .Select(b => new BankingDetailsItemDto
                     {
@@ -126,22 +158,16 @@ public class ClientService : IClientService
         return result;
     }
 
-    public async Task<List<ClientBankSummaryDto>> GetClientInvestmentSummaryAsync(CreateBankInvestmentDto request)
-    {
-        if (request.Id == null)
-            return new List<ClientBankSummaryDto>();
 
+    public async Task<bool> GetClientInvestmentSummaryAsync(CreateBankInvestmentDto request)
+    {
         var user = await _context.Users
             .AsNoTracking()
-            .Include(u => u.Accounts)
-            .Include(u => u.Investments)
-            .Include(u => u.Loans)
-            .Include(u => u.BankingDetails)
             .Where(u => (u.Role == UserRole.Client || u.Role == UserRole.Admin) && u.Id == request.Id)
             .FirstOrDefaultAsync();
 
         if (user is null)
-            return new List<ClientBankSummaryDto>();
+            return false;
 
         var existingInvestment = await _context.ClientInvestment
          .FirstOrDefaultAsync(ci => ci.AccountId == request.AccountId);
@@ -150,42 +176,6 @@ public class ClientService : IClientService
         {
             throw new InvalidOperationException($"An investment already exists for AccountId {request.AccountId}.");
         }
-
-        var activeAccounts = user.Accounts?.Where(a => a.IsActive && a.Id.ToString() == request.AccountId).ToList() ?? new List<Account>();
-        var bankingDetails = user.BankingDetails?.Select(b => new BankingDetailsItemDto
-        {
-            UserId = b.UserId,
-            BeneficialName = b.BeneficialName,
-            IBAN = b.IBAN,
-            Reference = b.Reference,
-            BIC = b.BIC
-        }).ToList() ?? new List<BankingDetailsItemDto>();
-
-        var activeBalance = activeAccounts.Sum(a => a.Balance);
-
-        var result = new List<ClientBankSummaryDto>
-{
-    new ClientBankSummaryDto
-    {
-        ClientId = user.Id,
-        FullName = $"{user.FirstName} {user.LastName}",
-        Username = user.Username,
-        Email = user.Email,
-        InvestmentRange = (int)(user.PotentialInvestmentRange ?? 0),
-        Status = (int)user.Status,
-        EmailStatus = false,
-        Passkey = user.Passkey,
-        CreatedAt = user.CreatedAt,
-        LastLogin = user.LastLogin,
-        ActiveAccounts = activeAccounts.Count,
-        ActiveInvestments = user.Investments?.Count(i => i.Status == InvestmentStatus.Active) ?? 0,
-        ActiveLoans = user.Loans?.Count(l => l.Status == LoanStatus.Active) ?? 0,
-        TotalBalanceUSD = activeBalance,
-        MonthlyReturns = request.MonthlyPercent,
-        YearlyReturns = request.YearlyPercent,
-        BankingDetails = bankingDetails
-    }
-};
 
         var clientInvestment = new ClientInvestment
         {
@@ -200,7 +190,7 @@ public class ClientService : IClientService
 
         _context.ClientInvestment.Add(clientInvestment);
         await _context.SaveChangesAsync();
-        return result;
+        return true;
     }
 
     public async Task<List<ClientInvestmentResponse>> GetClientInvestmentAsync(Guid clientId, string? accountId)

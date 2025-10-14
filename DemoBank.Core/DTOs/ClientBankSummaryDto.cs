@@ -21,9 +21,14 @@ namespace DemoBank.Core.DTOs
         public int ActiveLoans { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastLogin { get; set; }
+        public decimal MonthlyPercent { get; set; }
+        public decimal YearlyPercent { get; set; }
         public decimal TotalBalanceUSD { get; set; }
-        public decimal MonthlyReturns { get; set; }
-        public decimal YearlyReturns { get; set; }
+        public decimal TotalBalanceEUR { get; set; }
+        public decimal MonthlyReturnsUSD { get; set; }
+        public decimal YearlyReturnsUSD { get; set; }
+        public decimal MonthlyReturnsEUR { get; set; }
+        public decimal YearlyReturnsEUR { get; set; }
 
         public List<BankingDetailsItemDto> BankingDetails { get; set; } = new();
     }
