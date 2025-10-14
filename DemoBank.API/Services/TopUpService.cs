@@ -3,6 +3,7 @@ using DemoBank.API.Helpers;
 using DemoBank.Core.DTOs;
 using DemoBank.Core.Models;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace DemoBank.API.Services;
 
@@ -13,6 +14,7 @@ public class TopUpService : ITopUpService
     private readonly ICurrencyService _currencyService;
     private readonly INotificationHelper _notificationHelper;
     private readonly ILogger<TopUpService> _logger;
+    private readonly IClientService _clientService;
 
     // Fee structure for different payment methods
     private readonly Dictionary<PaymentMethod, (decimal percentage, decimal minimum, decimal maximum)> _feeStructure = new()
@@ -32,15 +34,210 @@ public class TopUpService : ITopUpService
         IAccountService accountService,
         ICurrencyService currencyService,
         INotificationHelper notificationHelper,
-        ILogger<TopUpService> logger)
+        ILogger<TopUpService> logger,
+        IClientService clientService)
     {
         _context = context;
         _accountService = accountService;
         _currencyService = currencyService;
         _notificationHelper = notificationHelper;
         _logger = logger;
+        _clientService = clientService;
+    }
+    public async Task<TopUpRequestCreatedDto> CreatePendingTopUpAsync(Guid userId, AccountTopUpDto dto, CancellationToken ct = default)
+    {
+        var acc = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == dto.AccountId, ct)
+                  ?? throw new InvalidOperationException("Account not found");
+        if (acc.UserId != userId) throw new UnauthorizedAccessException("You don't own this account");
+        if (!acc.IsActive) throw new InvalidOperationException("Account is not active");
+
+        if (await _currencyService.GetCurrencyAsync(dto.Currency) is null)
+            throw new InvalidOperationException($"Currency {dto.Currency} is not supported");
+
+        var pending = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            AccountId = dto.AccountId,
+            Type = TransactionType.Deposit,
+            Amount = dto.Amount,
+            Currency = dto.Currency.ToUpperInvariant(),
+            Description = $"Top-up init via {dto.PaymentMethod}",
+            Status = TransactionStatus.Pending,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Transactions.Add(pending);
+        await _context.SaveChangesAsync(ct);
+
+        var detailsList = await _clientService.GetClientBankingDetails(userId);
+        var instruction = BuildInstructionFrom(detailsList, dto);
+
+        return new TopUpRequestCreatedDto
+        {
+            TransactionId = pending.Id,
+            Status = pending.Status.ToString(),
+            Amount = pending.Amount,
+            Currency = pending.Currency,
+            PaymentMethod = dto.PaymentMethod,
+            PaymentInstruction = instruction
+        };
     }
 
+    public async Task<List<TopUpListItemDto>> GetTopUpsAsync(Guid requesterId, bool isAdmin, string? status = null, int take = 100, CancellationToken ct = default)
+    {
+        var q = _context.Transactions.AsNoTracking().Where(t => t.Type == TransactionType.Deposit);
+
+        if (!isAdmin)
+        {
+            q = q.Join(_context.Accounts, t => t.AccountId, a => a.Id, (t, a) => new { t, a })
+                 .Where(x => x.a.UserId == requesterId)
+                 .Select(x => x.t);
+        }
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<TransactionStatus>(status, true, out var st))
+            q = q.Where(t => t.Status == st);
+
+        var list = await q.OrderByDescending(t => t.CreatedAt)
+                          .Take(Math.Clamp(take, 1, 1000))
+                          .Join(_context.Accounts, t => t.AccountId, a => a.Id, (t, a) => new TopUpListItemDto
+                          {
+                              TransactionId = t.Id,
+                              CreatedAt = t.CreatedAt,
+                              AccountId = a.Id,
+                              AccountNumber = a.AccountNumber,
+                              Amount = t.Amount,
+                              Currency = t.Currency,
+                              PaymentMethod = ParsePaymentFromDescription(t.Description),
+                              Status = t.Status.ToString()
+                          })
+                          .ToListAsync(ct);
+
+        return list;
+    }
+
+    public async Task AdminUpdateStatusAsync(Guid adminId, Guid transactionId, string newStatus, string? reason = null, CancellationToken ct = default)
+    {
+        var pending = await _context.Transactions.FirstOrDefaultAsync(t => t.Id == transactionId, ct)
+                      ?? throw new InvalidOperationException("Transaction not found");
+        if (pending.Type != TransactionType.Deposit)
+            throw new InvalidOperationException("Not a top-up transaction");
+        if (pending.Status != TransactionStatus.Pending)
+            throw new InvalidOperationException($"Transaction is not Pending (current: {pending.Status})");
+
+        if (newStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
+        {
+            pending.Status = TransactionStatus.Cancelled;
+            pending.Description = (pending.Description ?? "") + (string.IsNullOrWhiteSpace(reason) ? "" : $" | Rejected: {reason}");
+            await _context.SaveChangesAsync(ct);
+            return;
+        }
+
+        if (!newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Unsupported status transition");
+
+        var acc = await _context.Accounts.FirstAsync(a => a.Id == pending.AccountId, ct);
+        var userId = acc.UserId;
+
+        var strategy = _context.Database.CreateExecutionStrategy();
+
+        TopUpResultDto resultDto = await strategy.ExecuteAsync(async () =>
+        {
+            return await ProcessTopUpAsync(userId, new AccountTopUpDto
+            {
+                AccountId = pending.AccountId,
+                Amount = pending.Amount,
+                Currency = pending.Currency,
+                PaymentMethod = ParsePaymentFromDescription(pending.Description),
+                Description = "Approved from pending"
+            });
+        });
+
+        pending.Status = TransactionStatus.Completed;
+        pending.BalanceAfter = await _context.Accounts
+            .Where(a => a.Id == pending.AccountId)
+            .Select(a => a.Balance)
+            .FirstAsync(ct);
+
+        var refPart = string.IsNullOrWhiteSpace(resultDto?.ReferenceNumber) ? "" : $" | Completed Ref: {resultDto.ReferenceNumber}";
+        pending.Description = (pending.Description ?? "") + refPart;
+
+        await _context.SaveChangesAsync(ct);
+    }
+
+
+    private static PaymentMethod ParsePaymentFromDescription(string? desc)
+    {
+        if (string.IsNullOrWhiteSpace(desc)) return PaymentMethod.BankTransfer;
+        if (desc.Contains("Crypto", StringComparison.OrdinalIgnoreCase)) return PaymentMethod.Crypto;
+        if (desc.Contains("Iban", StringComparison.OrdinalIgnoreCase)) return PaymentMethod.Iban;
+        if (desc.Contains("Card", StringComparison.OrdinalIgnoreCase)) return PaymentMethod.CreditCard;
+        if (desc.Contains("Bank", StringComparison.OrdinalIgnoreCase)) return PaymentMethod.BankTransfer;
+        return PaymentMethod.BankTransfer;
+    }
+
+    private static PaymentInstructionDto BuildInstructionFrom(List<BankingDetailsDto>? details, AccountTopUpDto dto)
+    {
+        if (details == null || details.Count == 0)
+            throw new ValidationException("No banking details found for the user.");
+
+        var d = dto.PaymentMethod switch
+        {
+            PaymentMethod.Iban => details.FirstOrDefault(x => x.IbanDetails != null),
+            PaymentMethod.BankTransfer => details.FirstOrDefault(x => x.BankDetails != null),
+            PaymentMethod.Crypto => details.FirstOrDefault(x => x.CryptocurrencyDetails != null),
+            PaymentMethod.CreditCard => details.FirstOrDefault(x => x.CardDetails != null),
+            _ => null
+        };
+
+        if (d is null)
+            throw new ValidationException($"No saved details match payment method: {dto.PaymentMethod}.");
+
+        var pi = new PaymentInstructionDto
+        {
+            Method = dto.PaymentMethod
+        };
+
+        switch (dto.PaymentMethod)
+        {
+            case PaymentMethod.Iban:
+                {
+                    var iban = d.IbanDetails
+                                ?? throw new ValidationException("IbanDetails is required for IBAN payment.");
+
+                    pi.BeneficialName = iban.BeneficialName;
+                    pi.Iban = iban.IBAN;
+                    pi.Reference = iban.Reference;
+                    pi.Bic = iban.BIC;
+                    break;
+                }
+
+            case PaymentMethod.BankTransfer:
+                {
+                    _ = d.BankDetails ?? throw new ValidationException("BankDetails is required for bank transfer.");
+                    break;
+                }
+
+            case PaymentMethod.Crypto:
+                {
+                    var crypto = d.CryptocurrencyDetails
+                                  ?? throw new ValidationException("CryptocurrencyDetails is required for crypto payment.");
+
+                    pi.WalletAddress = crypto.WalletAddress;
+                    pi.CryptoAmount = dto.Amount;
+                    break;
+                }
+
+            case PaymentMethod.CreditCard:
+                {
+                    _ = d.CardDetails ?? throw new ValidationException("CardDetails is required for card payment.");
+                    break;
+                }
+
+            default:
+                throw new ValidationException("Unsupported payment method.");
+        }
+
+        return pi;
+    }
     public async Task<TopUpResultDto> ProcessTopUpAsync(Guid userId, AccountTopUpDto topUpDto)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -275,27 +472,33 @@ public class TopUpService : ITopUpService
 
     public async Task<TopUpLimitsDto> GetTopUpLimitsAsync(Guid userId)
     {
-        var today = DateTime.UtcNow.Date;
-        var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
+        // ყველა საზღვარი Utc-kind-ით
+        var todayUtc = new DateTime(
+            DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day,
+            0, 0, 0, DateTimeKind.Utc);
+
+        var firstDayOfMonthUtc = new DateTime(
+            todayUtc.Year, todayUtc.Month, 1,
+            0, 0, 0, DateTimeKind.Utc);
 
         // Get today's top-ups
         var todayTopUps = await _context.Transactions
             .Include(t => t.Account)
-            .Where(t => t.Account.UserId == userId &&
-                       t.Type == TransactionType.Deposit &&
-                       t.CreatedAt >= today &&
-                       t.Description != null &&
-                       t.Description.Contains("top-up", StringComparison.OrdinalIgnoreCase))
+            .Where(t => t.Account.UserId == userId
+                     && t.Type == TransactionType.Deposit
+                     && t.CreatedAt >= todayUtc
+                     && t.Description != null
+                     && EF.Functions.ILike(t.Description!, "%top-up%"))
             .ToListAsync();
 
         // Get this month's top-ups
         var monthlyTopUps = await _context.Transactions
             .Include(t => t.Account)
-            .Where(t => t.Account.UserId == userId &&
-                       t.Type == TransactionType.Deposit &&
-                       t.CreatedAt >= firstDayOfMonth &&
-                       t.Description != null &&
-                       t.Description.Contains("top-up", StringComparison.OrdinalIgnoreCase))
+            .Where(t => t.Account.UserId == userId
+                     && t.Type == TransactionType.Deposit
+                     && t.CreatedAt >= firstDayOfMonthUtc
+                     && t.Description != null
+                     && EF.Functions.ILike(t.Description!, "%top-up%"))
             .ToListAsync();
 
         // Calculate totals in USD

@@ -24,7 +24,29 @@ public class TopUpController : ControllerBase
         _accountService = accountService;
         _logger = logger;
     }
+    [HttpPost("CreateTopup")]
+    public async Task<IActionResult> Create([FromBody] AccountTopUpDto dto, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        var res = await _topUpService.CreatePendingTopUpAsync(userId, dto, ct);
+        return Ok(ResponseDto<TopUpRequestCreatedDto>.SuccessResponse(res, "Top-up request created (Pending)"));
+    }
 
+    [HttpGet("GetTopup")]
+    public async Task<IActionResult> List([FromQuery] string? status, [FromQuery] int take = 100, CancellationToken ct = default)
+    {
+        var isAdmin = User.IsInRole("Admin");
+        var userId = GetCurrentUserId();
+        var res = await _topUpService.GetTopUpsAsync(userId, isAdmin, status, take, ct);
+        return Ok(ResponseDto<List<TopUpListItemDto>>.SuccessResponse(res));
+    }
+
+    [HttpPut("{id:guid}/status")]
+    public async Task<IActionResult> AdminUpdateStatus([FromRoute] Guid id, [FromQuery] string value, [FromQuery] string? reason, CancellationToken ct = default)
+    {
+        await _topUpService.AdminUpdateStatusAsync(GetCurrentUserId(), id, value, reason, ct);
+        return Ok(new { Message = "Status updated" });
+    }
     // POST: api/TopUp
     [HttpPost]
     public async Task<IActionResult> TopUpAccount([FromBody] AccountTopUpDto topUpDto)
