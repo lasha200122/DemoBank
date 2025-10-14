@@ -3,7 +3,6 @@ using DemoBank.API.Data;
 using DemoBank.API.Services;
 using DemoBank.Core.DTOs;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -19,10 +18,11 @@ public class AccountController : ControllerBase
     private readonly IMapper _mapper;
     private readonly DemoBankContext _context;
 
-    public AccountController(IAccountService accountService, IMapper mapper)
+    public AccountController(IAccountService accountService, IMapper mapper, DemoBankContext context)
     {
         _accountService = accountService;
         _mapper = mapper;
+        _context = context;
     }
 
     // GET: api/Account
@@ -347,6 +347,7 @@ public class AccountController : ControllerBase
         }
         catch (Exception ex)
         {
+            Console.WriteLine(ex);
             return StatusCode(500, ResponseDto<object>.ErrorResponse(
                 "An error occurred while fetching account summary"
             ));
