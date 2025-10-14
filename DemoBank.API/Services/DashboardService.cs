@@ -33,11 +33,54 @@ public class DashboardService : IDashboardService
     public async Task<EnhancedDashboardDto> GetEnhancedDashboardAsync(Guid userId)
     {
         var user = await _context.Users
-            .Include(u => u.Settings)
-            .FirstOrDefaultAsync(u => u.Id == userId);
+         .Include(u => u.Settings)
+         .Include(u => u.Accounts)
+         .Include(u => u.Loans)
+         .Include(u => u.BankingDetails)
+         .AsNoTracking()
+         .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
             throw new InvalidOperationException("User not found");
+
+        var clientInvestments = await _context.ClientInvestment
+            .Where(ci => ci.UserId == userId)
+            .ToListAsync();
+
+        var activeAccounts = user.Accounts.Where(a => a.IsActive).ToList();
+
+        // Calculate monthly and yearly returns
+        var monthlyReturnsUSD = activeAccounts
+            .Where(a => a.Currency == "USD")
+            .Join(clientInvestments,
+                  a => a.Id.ToString(),
+                  ci => ci.AccountId,
+                  (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
+            .Sum();
+
+        var yearlyReturnsUSD = activeAccounts
+            .Where(a => a.Currency == "USD")
+            .Join(clientInvestments,
+                  a => a.Id.ToString(),
+                  ci => ci.AccountId,
+                  (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
+            .Sum();
+
+        var monthlyReturnsEUR = activeAccounts
+            .Where(a => a.Currency == "EUR")
+            .Join(clientInvestments,
+                  a => a.Id.ToString(),
+                  ci => ci.AccountId,
+                  (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
+            .Sum();
+
+        var yearlyReturnsEUR = activeAccounts
+            .Where(a => a.Currency == "EUR")
+            .Join(clientInvestments,
+                  a => a.Id.ToString(),
+                  ci => ci.AccountId,
+                  (a, ci) => (a.Balance * ci.YearlyReturn) / 100m)
+            .Sum();
 
         // Get all the necessary data
         var accounts = await _accountService.GetActiveUserAccountsAsync(userId);
@@ -103,7 +146,11 @@ public class DashboardService : IDashboardService
                 TotalBalanceUSD = totalBalanceUSD,
                 BalancesByCurrency = balancesByCurrency,
                 BalanceTrend = balanceTrend,
-                PrimaryAccount = accounts.FirstOrDefault(a => a.IsPriority)?.AccountNumber
+                PrimaryAccount = accounts.FirstOrDefault(a => a.IsPriority)?.AccountNumber,
+                MonthlyReturnsEUR = monthlyReturnsEUR,
+                MonthlyReturnsUSD = monthlyReturnsUSD,
+                YearlyReturnsEUR = yearlyReturnsEUR,
+                YearlyReturnsUSD = yearlyReturnsUSD
             },
             TransactionMetrics = new TransactionMetricsDto
             {
