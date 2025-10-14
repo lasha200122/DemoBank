@@ -233,9 +233,6 @@ public class AccountController : ControllerBase
 
             var result = await _accountService.ActivateAccountAsync(id);
 
-            if (!result)
-                return BadRequest(ResponseDto<object>.ErrorResponse("Failed to activate account"));
-
             return Ok(ResponseDto<object>.SuccessResponse(null, "Account activated successfully"));
         }
         catch (Exception ex)
@@ -262,9 +259,6 @@ public class AccountController : ControllerBase
                 return Forbid();
 
             var result = await _accountService.DeactivateAccountAsync(id);
-
-            if (!result)
-                return BadRequest(ResponseDto<object>.ErrorResponse("Failed to deactivate account"));
 
             return Ok(ResponseDto<object>.SuccessResponse(null, "Account deactivated successfully"));
         }
