@@ -118,10 +118,10 @@ public class TopUpService : ITopUpService
     {
         var pending = await _context.Transactions.FirstOrDefaultAsync(t => t.Id == transactionId, ct)
                       ?? throw new InvalidOperationException("Transaction not found");
-        if (pending.Type != TransactionType.Deposit)
-            throw new InvalidOperationException("Not a top-up transaction");
-        if (pending.Status != TransactionStatus.Pending)
-            throw new InvalidOperationException($"Transaction is not Pending (current: {pending.Status})");
+        //if (pending.Type != TransactionType.Deposit)
+        //    throw new InvalidOperationException("Not a top-up transaction");
+        //if (pending.Status != TransactionStatus.Pending)
+        //    throw new InvalidOperationException($"Transaction is not Pending (current: {pending.Status})");
 
         if (newStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
         {
@@ -131,8 +131,8 @@ public class TopUpService : ITopUpService
             return;
         }
 
-        if (!newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Unsupported status transition");
+        //if (!newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+        //    throw new InvalidOperationException("Unsupported status transition");
 
         var acc = await _context.Accounts.FirstAsync(a => a.Id == pending.AccountId, ct);
         var userId = acc.UserId;
