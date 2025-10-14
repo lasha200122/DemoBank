@@ -21,68 +21,23 @@ public class AccountTopUpDto
     [MaxLength(500)]
     public string Description { get; set; }
 
-    // Payment method specific fields
-    public CardPaymentDetails? CardDetails { get; set; }
-    public BankAccountDetails? BankDetails { get; set; }
-    public PayPalDetails? PayPalDetails { get; set; }
 }
 
-public class CardPaymentDetails
+public class ValidatePaymentMethodDto
 {
-    [CreditCard]
-    public string CardNumber { get; set; }
-
-    [MaxLength(100)]
-    public string CardHolderName { get; set; }
-
-    [RegularExpression(@"^(0[1-9]|1[0-2])\/\d{2}$")]
-    public string ExpiryDate { get; set; } // MM/YY format
-
-    [RegularExpression(@"^\d{3,4}$")]
-    public string CVV { get; set; }
-
-    [MaxLength(10)]
-    public string PostalCode { get; set; }
-}
-
-public class BankAccountDetails
-{
-    [Required]
-    public string AccountNumber { get; set; }
-
-    [Required]
-    public string RoutingNumber { get; set; }
-
-    [Required]
-    [MaxLength(100)]
-    public string AccountHolderName { get; set; }
-
-    [Required]
-    public BankAccountType AccountType { get; set; }
-}
-
-public class PayPalDetails
-{
-    [EmailAddress]
-    public string Email { get; set; }
-
-    public string PayPalTransactionId { get; set; }
+    public PaymentMethod PaymentMethod { get; set; }
+    public CardPaymentDetails CardDetails { get; set; }
+    public BankAccountDetails BankDetails { get; set; }
+    public IbanDetails IbanDetails { get; set; }
+    public CryptocurrencyDetails CryptocurrencyDetails { get; set; }
 }
 
 public enum PaymentMethod
 {
     CreditCard,
-    DebitCard,
     BankTransfer,
-    PayPal,
-    ApplePay,
-    GooglePay
-}
-
-public enum BankAccountType
-{
-    Checking,
-    Savings
+    Iban,
+    Crypto
 }
 
 public class TopUpResultDto
@@ -148,14 +103,6 @@ public class TopUpLimitsDto
     public decimal UsedThisMonth { get; set; }
     public decimal RemainingToday { get; set; }
     public decimal RemainingThisMonth { get; set; }
-}
-
-public class ValidatePaymentMethodDto
-{
-    public PaymentMethod PaymentMethod { get; set; }
-    public CardPaymentDetails CardDetails { get; set; }
-    public BankAccountDetails BankDetails { get; set; }
-    public PayPalDetails PayPalDetails { get; set; }
 }
 
 public class PaymentValidationResultDto

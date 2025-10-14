@@ -18,11 +18,7 @@ public class TopUpService : ITopUpService
     private readonly Dictionary<PaymentMethod, (decimal percentage, decimal minimum, decimal maximum)> _feeStructure = new()
     {
         { PaymentMethod.CreditCard, (0.029m, 0.50m, 100m) },      // 2.9% + min $0.50, max $100
-        { PaymentMethod.DebitCard, (0.015m, 0.25m, 50m) },        // 1.5% + min $0.25, max $50
         { PaymentMethod.BankTransfer, (0.005m, 1.00m, 25m) },     // 0.5% + min $1.00, max $25
-        { PaymentMethod.PayPal, (0.034m, 0.49m, 100m) },          // 3.4% + min $0.49, max $100
-        { PaymentMethod.ApplePay, (0.025m, 0.30m, 75m) },         // 2.5% + min $0.30, max $75
-        { PaymentMethod.GooglePay, (0.025m, 0.30m, 75m) }         // 2.5% + min $0.30, max $75
     };
 
     // Daily and monthly limits
@@ -83,16 +79,16 @@ public class TopUpService : ITopUpService
             }
 
             // Validate payment method
-            var validationResult = await ValidatePaymentMethodAsync(new ValidatePaymentMethodDto
-            {
-                PaymentMethod = topUpDto.PaymentMethod,
-                CardDetails = topUpDto.CardDetails,
-                BankDetails = topUpDto.BankDetails,
-                PayPalDetails = topUpDto.PayPalDetails
-            });
+            //var validationResult = await ValidatePaymentMethodAsync(new ValidatePaymentMethodDto
+            //{
+            //    PaymentMethod = topUpDto.PaymentMethod,
+            //    CardDetails = topUpDto.CardDetails,
+            //    BankDetails = topUpDto.BankDetails,
+            //    PayPalDetails = topUpDto.PayPalDetails
+            //});
 
-            if (!validationResult.IsValid)
-                throw new InvalidOperationException($"Payment validation failed: {string.Join(", ", validationResult.Errors)}");
+            //if (!validationResult.IsValid)
+            //    throw new InvalidOperationException($"Payment validation failed: {string.Join(", ", validationResult.Errors)}");
 
             // Calculate fees
             var fee = CalculateProcessingFee(topUpDto.Amount, topUpDto.PaymentMethod);
@@ -356,39 +352,6 @@ public class TopUpService : ITopUpService
         switch (validationDto.PaymentMethod)
         {
             case PaymentMethod.CreditCard:
-            case PaymentMethod.DebitCard:
-                if (validationDto.CardDetails == null)
-                {
-                    result.IsValid = false;
-                    result.Errors.Add("Card details are required");
-                    result.PaymentMethodStatus = "Invalid";
-                }
-                else
-                {
-                    // Validate card number (simplified Luhn check)
-                    if (!IsValidCardNumber(validationDto.CardDetails.CardNumber))
-                    {
-                        result.IsValid = false;
-                        result.Errors.Add("Invalid card number");
-                    }
-
-                    // Validate expiry date
-                    if (!IsValidExpiryDate(validationDto.CardDetails.ExpiryDate))
-                    {
-                        result.IsValid = false;
-                        result.Errors.Add("Card has expired or invalid expiry date");
-                    }
-
-                    // Validate CVV
-                    if (string.IsNullOrEmpty(validationDto.CardDetails.CVV) ||
-                        validationDto.CardDetails.CVV.Length < 3 ||
-                        validationDto.CardDetails.CVV.Length > 4)
-                    {
-                        result.IsValid = false;
-                        result.Errors.Add("Invalid CVV");
-                    }
-                }
-                break;
 
             case PaymentMethod.BankTransfer:
                 if (validationDto.BankDetails == null)
@@ -418,28 +381,6 @@ public class TopUpService : ITopUpService
                 }
                 break;
 
-            case PaymentMethod.PayPal:
-                if (validationDto.PayPalDetails == null)
-                {
-                    result.IsValid = false;
-                    result.Errors.Add("PayPal details are required");
-                    result.PaymentMethodStatus = "Invalid";
-                }
-                else
-                {
-                    // Validate email
-                    if (string.IsNullOrEmpty(validationDto.PayPalDetails.Email) ||
-                        !IsValidEmail(validationDto.PayPalDetails.Email))
-                    {
-                        result.IsValid = false;
-                        result.Errors.Add("Invalid PayPal email");
-                    }
-                }
-                break;
-
-            case PaymentMethod.ApplePay:
-            case PaymentMethod.GooglePay:
-                // These would typically be validated through their respective SDKs
                 result.PaymentMethodStatus = "Requires device authentication";
                 break;
         }
@@ -461,7 +402,6 @@ public class TopUpService : ITopUpService
         switch (topUpDto.PaymentMethod)
         {
             case PaymentMethod.CreditCard:
-            case PaymentMethod.DebitCard:
                 // Simulate Stripe or similar card processor
                 return new TopUpResultDto
                 {
@@ -477,25 +417,6 @@ public class TopUpService : ITopUpService
                     Success = true,
                     Message = "Bank transfer initiated successfully",
                     ReferenceNumber = $"ACH-{GenerateReferenceNumber()}"
-                };
-
-            case PaymentMethod.PayPal:
-                // Simulate PayPal API
-                return new TopUpResultDto
-                {
-                    Success = true,
-                    Message = "PayPal payment completed",
-                    ReferenceNumber = $"PP-{GenerateReferenceNumber()}"
-                };
-
-            case PaymentMethod.ApplePay:
-            case PaymentMethod.GooglePay:
-                // Simulate mobile payment APIs
-                return new TopUpResultDto
-                {
-                    Success = true,
-                    Message = $"{topUpDto.PaymentMethod} payment completed",
-                    ReferenceNumber = $"MOBILE-{GenerateReferenceNumber()}"
                 };
 
             default:
@@ -529,11 +450,7 @@ public class TopUpService : ITopUpService
         return method switch
         {
             PaymentMethod.CreditCard => "Credit Card",
-            PaymentMethod.DebitCard => "Debit Card",
             PaymentMethod.BankTransfer => "Bank Transfer",
-            PaymentMethod.PayPal => "PayPal",
-            PaymentMethod.ApplePay => "Apple Pay",
-            PaymentMethod.GooglePay => "Google Pay",
             _ => method.ToString()
         };
     }
@@ -543,11 +460,7 @@ public class TopUpService : ITopUpService
         return method switch
         {
             PaymentMethod.CreditCard => "credit-card",
-            PaymentMethod.DebitCard => "credit-card",
             PaymentMethod.BankTransfer => "bank",
-            PaymentMethod.PayPal => "paypal",
-            PaymentMethod.ApplePay => "apple",
-            PaymentMethod.GooglePay => "google",
             _ => "payment"
         };
     }
@@ -557,11 +470,7 @@ public class TopUpService : ITopUpService
         return method switch
         {
             PaymentMethod.CreditCard => 1,      // 1 minute
-            PaymentMethod.DebitCard => 1,       // 1 minute
             PaymentMethod.BankTransfer => 60,   // 60 minutes
-            PaymentMethod.PayPal => 5,          // 5 minutes
-            PaymentMethod.ApplePay => 1,        // 1 minute
-            PaymentMethod.GooglePay => 1,       // 1 minute
             _ => 5
         };
     }
@@ -585,16 +494,8 @@ public class TopUpService : ITopUpService
     {
         if (description.Contains("CreditCard", StringComparison.OrdinalIgnoreCase))
             return PaymentMethod.CreditCard;
-        if (description.Contains("DebitCard", StringComparison.OrdinalIgnoreCase))
-            return PaymentMethod.DebitCard;
         if (description.Contains("Bank", StringComparison.OrdinalIgnoreCase))
             return PaymentMethod.BankTransfer;
-        if (description.Contains("PayPal", StringComparison.OrdinalIgnoreCase))
-            return PaymentMethod.PayPal;
-        if (description.Contains("Apple", StringComparison.OrdinalIgnoreCase))
-            return PaymentMethod.ApplePay;
-        if (description.Contains("Google", StringComparison.OrdinalIgnoreCase))
-            return PaymentMethod.GooglePay;
 
         return PaymentMethod.BankTransfer; // Default
     }

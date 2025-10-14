@@ -78,16 +78,28 @@ public class ClientService : IClientService
         {
             Id = Guid.NewGuid(),
             UserId = (Guid)createDto.UserId,
-            BeneficialName = createDto.BeneficialName,
-            IBAN = createDto.IBAN,
-            Reference = createDto.Reference,
-            BIC = createDto.BIC
+
+            // IBAN details
+            BeneficialName = createDto.BankingDetails?.IbanDetails?.BeneficialName,
+            IBAN = createDto.BankingDetails?.IbanDetails?.IBAN,
+            Reference = createDto.BankingDetails?.IbanDetails?.Reference,
+            BIC = createDto.BankingDetails?.IbanDetails?.BIC,
+
+            // Card details
+            CardNumber = createDto.BankingDetails?.CardDetails?.CardNumber,
+            CardHolderName = createDto.BankingDetails?.CardDetails?.CardHolderName,
+            ExpiryDate = createDto.BankingDetails?.CardDetails?.ExpiryDate,
+            CVV = createDto.BankingDetails?.CardDetails?.CVV,
+
+            // Cryptocurrency details
+            WalletAddress = createDto.BankingDetails?.CryptocurrencyDetails?.WalletAddress,
+            TransactionHash = createDto.BankingDetails?.CryptocurrencyDetails?.TransactionHash
         };
+
 
         _context.BankingDetails.Add(bankingDetails);
 
         return await _context.SaveChangesAsync() > 0;
-
     }
 
     public async Task<List<ClientBankSummaryDto>> GetClientListById(Guid? guid)
@@ -175,10 +187,35 @@ public class ClientService : IClientService
                 BankingDetails = u.BankingDetails.Select(b => new BankingDetailsItemDto
                 {
                     UserId = b.UserId,
-                    BeneficialName = b.BeneficialName,
-                    IBAN = b.IBAN,
-                    Reference = b.Reference,
-                    BIC = b.BIC
+
+                    BankDetails = new BankAccountDetails
+                    {
+                        AccountHolderName = b.AccountHolderName,
+                        AccountNumber = b.AccountNumber,
+                        RoutingNumber = b.RoutingNumber
+                    },
+
+                    CardPaymentDetails = new CardPaymentDetails
+                    {
+                        CardHolderName = b.CardHolderName,
+                        CardNumber = b.CardNumber,
+                        CVV = b.CVV,
+                        ExpiryDate = b.ExpiryDate
+                    },
+
+                    CryptocurrencyDetails = new CryptocurrencyDetails
+                    {
+                        WalletAddress = b.WalletAddress,
+                        TransactionHash = b.TransactionHash
+                    },
+
+                    IbanDetails = new IbanDetails
+                    {
+                        BeneficialName = b.BeneficialName,
+                        IBAN = b.IBAN,
+                        Reference = b.Reference,
+                        BIC = b.BIC
+                    }
                 }).ToList()
             };
         }).ToList();

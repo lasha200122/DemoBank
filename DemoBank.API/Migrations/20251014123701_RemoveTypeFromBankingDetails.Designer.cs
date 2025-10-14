@@ -3,6 +3,7 @@ using System;
 using DemoBank.API.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DemoBank.API.Migrations
 {
     [DbContext(typeof(DemoBankContext))]
-    partial class DemoBankContextModelSnapshot : ModelSnapshot
+    [Migration("20251014123701_RemoveTypeFromBankingDetails")]
+    partial class RemoveTypeFromBankingDetails
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,19 +83,13 @@ namespace DemoBank.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AccountHolderName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("AccountNumber")
-                        .HasMaxLength(34)
-                        .HasColumnType("character varying(34)");
-
                     b.Property<string>("BIC")
+                        .IsRequired()
                         .HasMaxLength(12)
                         .HasColumnType("character varying(12)");
 
                     b.Property<string>("BeneficialName")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -113,16 +110,14 @@ namespace DemoBank.API.Migrations
                         .HasColumnType("character varying(5)");
 
                     b.Property<string>("IBAN")
+                        .IsRequired()
                         .HasMaxLength(34)
                         .HasColumnType("character varying(34)");
 
                     b.Property<string>("Reference")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<string>("RoutingNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("TransactionHash")
                         .HasMaxLength(100)

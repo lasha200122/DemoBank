@@ -414,19 +414,15 @@ public class DemoBankContext : DbContext
 
             // Columns
             entity.Property(e => e.BeneficialName)
-                .IsRequired()
                 .HasMaxLength(50);
 
             entity.Property(e => e.IBAN)
-                .IsRequired()
                 .HasMaxLength(34);
 
             entity.Property(e => e.Reference)
-                .IsRequired()
                 .HasMaxLength(50);
 
             entity.Property(e => e.BIC)
-                .IsRequired()
                 .HasMaxLength(12);
 
             entity.HasOne(e => e.User)

@@ -7,19 +7,11 @@ using System.Threading.Tasks;
 
 namespace DemoBank.Core.DTOs
 {
-    public class BankingDetailsDto : AdminClientListDto
+    public class BankingDetailsDto
     {
-        public Guid? UserId { get; set; }
-        [Required]
-        public string BeneficialName { get; set; }
-
-        [Required]
-        public string IBAN { get; set; }
-
-        [Required]
-        public string Reference { get; set; }
-
-        [Required]
-        public string BIC { get; set; }
+        public CardPaymentDetails? CardDetails { get; set; }
+        public BankAccountDetails? BankDetails { get; set; }
+        public IbanDetails? IbanDetails { get; set; }
+        public CryptocurrencyDetails? CryptocurrencyDetails { get; set; }
     }
 }

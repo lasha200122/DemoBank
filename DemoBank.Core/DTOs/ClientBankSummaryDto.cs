@@ -31,13 +31,13 @@ namespace DemoBank.Core.DTOs
         public List<BankingDetailsItemDto> BankingDetails { get; set; } = new();
     }
 
-    public sealed class BankingDetailsItemDto
-    {
-        public Guid? UserId { get; set; }
-        public string BeneficialName { get; set; } = default!;
-        public string IBAN { get; set; } = default!;
-        public string Reference { get; set; } = default!;
-        public string BIC { get; set; } = default!;
-    }
+        public sealed class BankingDetailsItemDto
+        {
+            public Guid? UserId { get; set; }
+            public BankAccountDetails BankDetails { get; set; }
+            public CardPaymentDetails CardPaymentDetails { get; set; }
+            public CryptocurrencyDetails CryptocurrencyDetails { get; set; }
+            public IbanDetails IbanDetails { get; set; }
+        }
 
 }
