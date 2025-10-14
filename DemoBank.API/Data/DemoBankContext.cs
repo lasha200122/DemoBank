@@ -29,6 +29,8 @@ public class DemoBankContext : DbContext
     public DbSet<InvestmentTransaction> InvestmentTransactions { get; set; }
     public DbSet<BankingDetails> BankingDetails { get; set; }
     public DbSet<ClientInvestment> ClientInvestment { get; set; }
+    public DbSet<UserDocument> UserDocuments { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -403,6 +405,42 @@ public class DemoBankContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.AccountId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UserDocument>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Reviewer)
+                .WithMany()
+                .HasForeignKey(e => e.ReviewedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.FileName)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(e => e.FileId)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.Property(e => e.ContentType)
+                .HasMaxLength(100);
+
+            entity.Property(e => e.RejectionReason)
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.UploadedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.DocumentType);
+            entity.HasIndex(e => e.Status);
         });
 
         modelBuilder.Entity<BankingDetails>(entity =>

@@ -199,6 +199,10 @@ builder.Services.AddSingleton<StockDataFetcher>();
 builder.Services.AddSingleton<StockDataBackgroundWorker>();
 builder.Services.AddHostedService(provider => provider.GetRequiredService<StockDataBackgroundWorker>());
 builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddSingleton<IMinioService, MinioService>();
+
+// Register Document Service
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 
 // Register Background Services
 builder.Services.AddHostedService<NotificationBackgroundService>();
