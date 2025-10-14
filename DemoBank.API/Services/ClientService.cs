@@ -373,6 +373,7 @@ public class ClientService : IClientService
             .Where(b => b.UserId == userId)
             .Select(b => new BankingDetailsDto
             {
+                Id = b.Id,
                 CardDetails = new CardPaymentDetails
                 {
                     CardNumber = b.CardNumber,
