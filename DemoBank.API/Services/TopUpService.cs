@@ -41,8 +41,8 @@ public class TopUpService : ITopUpService
     {
         var acc = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == dto.AccountId, ct)
                   ?? throw new InvalidOperationException("Account not found");
-        if (acc.UserId != userId) throw new UnauthorizedAccessException("You don't own this account");
-        if (!acc.IsActive) throw new InvalidOperationException("Account is not active");
+        //if (acc.UserId != userId) throw new UnauthorizedAccessException("You don't own this account");
+        //if (!acc.IsActive) throw new InvalidOperationException("Account is not active");
 
         if (await _currencyService.GetCurrencyAsync(dto.Currency) is null)
             throw new InvalidOperationException($"Currency {dto.Currency} is not supported");
@@ -61,7 +61,7 @@ public class TopUpService : ITopUpService
         _context.Transactions.Add(pending);
         await _context.SaveChangesAsync(ct);
 
-        var detailsList = await _clientService.GetClientBankingDetails(userId);
+        var detailsList = await _clientService.GetClientBankingDetails(acc.UserId);
         var instruction = BuildInstructionFrom(detailsList, dto);
 
         return new TopUpRequestCreatedDto
