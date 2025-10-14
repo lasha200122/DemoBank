@@ -90,6 +90,7 @@ public class ClientService : IClientService
         if (guid is null)
             return new List<ClientBankSummaryDto>();
 
+        var investments = await _context.ClientInvestment.CountAsync(c => c.UserId == guid);
         var result = await _context.Users
             .Where(u => (u.Role == UserRole.Client || u.Role == UserRole.Admin) && u.Id == guid)
             .Select(u => new ClientBankSummaryDto
@@ -105,7 +106,7 @@ public class ClientService : IClientService
                 CreatedAt = u.CreatedAt,
                 LastLogin = u.LastLogin,
                 ActiveAccounts = u.Accounts.Count(a => a.IsActive),
-                ActiveInvestments = u.Investments.Count(i => i.Status == InvestmentStatus.Active),
+                ActiveInvestments = investments,
                 ActiveLoans = u.Loans.Count(l => l.Status == LoanStatus.Active),
                 TotalBalanceUSD = u.Accounts
                    .Where(a => a.IsActive && a.Currency == "USD")
