@@ -61,7 +61,9 @@ public class DocumentService : IDocumentService
             FileSize = file.Length,
             Status = DocumentStatus.Pending,
             UploadedAt = DateTime.UtcNow,
-            ExpiryDate = expiryDate
+            ExpiryDate = expiryDate,
+            RejectionReason = string.Empty,
+            ReviewedBy = userId
         };
 
         _context.UserDocuments.Add(document);
