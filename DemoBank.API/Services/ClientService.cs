@@ -143,6 +143,14 @@ public class ClientService : IClientService
         if (user is null)
             return new List<ClientBankSummaryDto>();
 
+        var existingInvestment = await _context.ClientInvestment
+         .FirstOrDefaultAsync(ci => ci.AccountId == request.AccountId);
+
+        if (existingInvestment != null)
+        {
+            throw new InvalidOperationException($"An investment already exists for AccountId {request.AccountId}.");
+        }
+
         var activeAccounts = user.Accounts?.Where(a => a.IsActive && a.AccountNumber == request.AccountId).ToList() ?? new List<Account>();
         var bankingDetails = user.BankingDetails?.Select(b => new BankingDetailsItemDto
         {

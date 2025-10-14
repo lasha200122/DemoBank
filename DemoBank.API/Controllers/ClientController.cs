@@ -2,6 +2,7 @@
 using DemoBank.Core.DTOs;
 using DemoBank.Core.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DemoBank.API.Controllers;
@@ -46,11 +47,24 @@ public class ClientController : ControllerBase
         if (!success) return NotFound(new { Message = "Client not found" });
         return Ok(new { Message = "Client rejected successfully" });
     }
+
     [HttpPost("GetClientInvestement")]
     public async Task<IActionResult> GetClientInvestement([FromBody] CreateBankInvestmentDto request)
     {
-        var clients = await _clientService.GetClientInvestmentSummaryAsync(request);
-        return Ok(clients);
+        try
+        {
+            var clients = await _clientService.GetClientInvestmentSummaryAsync(request);
+
+            return Ok(clients);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An unexpected error occurred.", detail = ex.Message });
+        }
     }
 
     [HttpGet("GetInvestment")]
