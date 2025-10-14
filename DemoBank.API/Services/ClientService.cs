@@ -163,10 +163,6 @@ public class ClientService : IClientService
 
         var activeBalance = activeAccounts.Sum(a => a.Balance);
 
-        var monthlyReturn = Math.Round((activeBalance * (decimal)request.MonthlyPercent) / 100m, 2);
-        var yearlyReturn = Math.Round((activeBalance * (decimal)request.YearlyPercent) / 100m, 2);
-
-
         var result = new List<ClientBankSummaryDto>
 {
     new ClientBankSummaryDto
@@ -185,8 +181,8 @@ public class ClientService : IClientService
         ActiveInvestments = user.Investments?.Count(i => i.Status == InvestmentStatus.Active) ?? 0,
         ActiveLoans = user.Loans?.Count(l => l.Status == LoanStatus.Active) ?? 0,
         TotalBalanceUSD = activeBalance,
-        MonthlyReturns = monthlyReturn,
-        YearlyReturns = yearlyReturn,
+        MonthlyReturns = request.MonthlyPercent,
+        YearlyReturns = request.YearlyPercent,
         BankingDetails = bankingDetails
     }
 };
@@ -195,8 +191,8 @@ public class ClientService : IClientService
         {
             Id = Guid.NewGuid(),
             UserId = request.Id,
-            MonthlyReturn = monthlyReturn,
-            YearlyReturn = yearlyReturn,
+            MonthlyReturn = request.MonthlyPercent,
+            YearlyReturn = request.YearlyPercent,
             CreatedAt = DateTime.UtcNow,
             AccountId = request.AccountId
         };
