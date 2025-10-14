@@ -9,6 +9,7 @@ namespace DemoBank.Core.DTOs
 {
     public class BankingDetailsDto
     {
+        public Guid? Id { get; set; } = null;
         public CardPaymentDetails? CardDetails { get; set; }
         public BankAccountDetails? BankDetails { get; set; }
         public IbanDetails? IbanDetails { get; set; }
