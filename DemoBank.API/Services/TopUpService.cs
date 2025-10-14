@@ -160,7 +160,7 @@ public class TopUpService : ITopUpService
         var refPart = string.IsNullOrWhiteSpace(resultDto?.ReferenceNumber) ? "" : $" | Completed Ref: {resultDto.ReferenceNumber}";
         pending.Description = (pending.Description ?? "") + refPart;
 
-        await _context.SaveChangesAsync(ct);
+        await _context.SaveChangesAsync();
     }
 
 
@@ -240,8 +240,6 @@ public class TopUpService : ITopUpService
     }
     public async Task<TopUpResultDto> ProcessTopUpAsync(Guid userId, AccountTopUpDto topUpDto)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
         try
         {
             // Validate account ownership
@@ -372,8 +370,6 @@ public class TopUpService : ITopUpService
                 NotificationType.Transaction
             );
 
-            await transaction.CommitAsync();
-
             _logger.LogInformation($"Top-up successful for user {userId}, account {account.AccountNumber}, amount {topUpDto.Amount} {topUpDto.Currency}");
 
             return new TopUpResultDto
@@ -394,7 +390,6 @@ public class TopUpService : ITopUpService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
             _logger.LogError(ex, $"Top-up failed for user {userId}");
             throw;
         }
