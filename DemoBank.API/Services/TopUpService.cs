@@ -109,54 +109,80 @@ public class TopUpService : ITopUpService
 
     public async Task AdminUpdateStatusAsync(Guid adminId, Guid transactionId, string newStatus, string? reason = null, CancellationToken ct = default)
     {
-        var pending = await _context.Transactions.FirstOrDefaultAsync(t => t.Id == transactionId, ct)
-                      ?? throw new InvalidOperationException("Transaction not found");
+        var pending = await _context.Transactions
+            .Include(t => t.Account)
+            .FirstOrDefaultAsync(t => t.Id == transactionId, ct)
+            ?? throw new InvalidOperationException("Transaction not found");
+
         //if (pending.Type != TransactionType.Deposit)
         //    throw new InvalidOperationException("Not a top-up transaction");
+
         //if (pending.Status != TransactionStatus.Pending)
         //    throw new InvalidOperationException($"Transaction is not Pending (current: {pending.Status})");
 
+        // Handle rejection
         if (newStatus.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
         {
             pending.Status = TransactionStatus.Cancelled;
-            pending.Description = (pending.Description ?? "") + (string.IsNullOrWhiteSpace(reason) ? "" : $" | Rejected: {reason}");
+            pending.Description = (pending.Description ?? "") +
+                (string.IsNullOrWhiteSpace(reason) ? "" : $" | Rejected: {reason}");
             await _context.SaveChangesAsync(ct);
             return;
         }
 
-        //if (!newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
-        //    throw new InvalidOperationException("Unsupported status transition");
+        // Handle approval
+        if (!newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Unsupported status transition");
 
-        var acc = await _context.Accounts.FirstAsync(a => a.Id == pending.AccountId, ct);
-        var userId = acc.UserId;
+        var account = pending.Account;
 
-        var strategy = _context.Database.CreateExecutionStrategy();
+        // Validate currency
+        //var currency = await _currencyService.GetCurrencyAsync(pending.Currency);
+        //if (currency == null)
+        //    throw new InvalidOperationException($"Currency {pending.Currency} is not supported");
 
-        TopUpResultDto resultDto = await strategy.ExecuteAsync(async () =>
-        {
-            return await ProcessTopUpAsync(userId, new AccountTopUpDto
-            {
-                AccountId = pending.AccountId,
-                Amount = pending.Amount,
-                Currency = pending.Currency,
-                PaymentMethod = ParsePaymentFromDescription(pending.Description),
-                Description = "Approved from pending"
-            });
-        });
+        // Calculate amount in account currency if different
+        decimal amountInAccountCurrency = pending.Amount;
+        decimal? exchangeRate = null;
 
+        //if (pending.Currency.ToUpper() != account.Currency)
+        //{
+        //    exchangeRate = await _currencyService.GetExchangeRateAsync(
+        //        pending.Currency,
+        //        account.Currency
+        //    );
+        //    amountInAccountCurrency = await _currencyService.ConvertCurrencyAsync(
+        //        pending.Amount,
+        //        pending.Currency,
+        //        account.Currency
+        //    );
+        //}
+
+        // Update account balance
+        account.Balance += amountInAccountCurrency;
+        account.UpdatedAt = DateTime.UtcNow;
+
+        // Update the existing transaction
         pending.Status = TransactionStatus.Completed;
-        pending.BalanceAfter = await _context.Accounts
-            .Where(a => a.Id == pending.AccountId)
-            .Select(a => a.Balance)
-            .FirstAsync(ct);
+        pending.ExchangeRate = exchangeRate;
+        pending.AmountInAccountCurrency = amountInAccountCurrency;
+        pending.BalanceAfter = account.Balance;
+        pending.Description = (pending.Description ?? "") + " | Admin Approved" +
+            (string.IsNullOrWhiteSpace(reason) ? "" : $": {reason}");
 
-        var refPart = string.IsNullOrWhiteSpace(resultDto?.ReferenceNumber) ? "" : $" | Completed Ref: {resultDto.ReferenceNumber}";
-        pending.Description = (pending.Description ?? "") + refPart;
+        await _context.SaveChangesAsync(ct);
 
-        await _context.SaveChangesAsync();
+        // Send notification
+        var currencyInfo = await _currencyService.GetCurrencyAsync(account.Currency);
+        await _notificationHelper.CreateNotification(
+            account.UserId,
+            "Top-Up Approved",
+            $"Your account {account.AccountNumber} has been topped up with {currencyInfo.Symbol}{amountInAccountCurrency:N2}.",
+            NotificationType.Transaction
+        );
+
+        _logger.LogInformation($"Top-up {transactionId} approved by admin {adminId}");
     }
-
-
     private static PaymentMethod ParsePaymentFromDescription(string? desc)
     {
         if (string.IsNullOrWhiteSpace(desc)) return PaymentMethod.BankTransfer;
