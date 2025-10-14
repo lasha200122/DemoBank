@@ -4,6 +4,7 @@ using DemoBank.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace DemoBank.API.Controllers;
 
@@ -110,10 +111,62 @@ public class ClientController : ControllerBase
         }
         catch (Exception ex)
         {
+            Console.WriteLine(ex);
             return StatusCode(500, ResponseDto<object>.ErrorResponse(
                 "An error occurred while fetching account details"
             ));
 
         }
+    }
+
+    [HttpPut("banking-details")]
+    public async Task<IActionResult> UpdateBankingDetails([FromBody] UpdateBankingDetailsDto updateDto)
+    {
+        var updated = await _clientService.UpdateBankingDetails(updateDto);
+
+        if (!updated)
+            return NotFound(new { Message = "Banking details not found" });
+
+        return Ok(new { Message = "Banking details updated successfully" });
+    }
+
+    [HttpGet("banking-details")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetBankingDetails(Guid clientId)
+    {
+        if (User.Identity?.IsAuthenticated != true)
+            return Unauthorized("You must be logged in to access banking details.");
+
+        var currentUserId = GetCurrentUserId();
+        var isAdmin = User.IsInRole("Admin");
+        var isClient = User.IsInRole("Client");
+
+        if (!isAdmin)
+        {
+            // Clients can only access their own details
+            if (!isClient || currentUserId != clientId)
+            {
+                // Return 403 with custom message
+                return StatusCode(403, new { message = "Clients can only access their own banking details." });
+            }
+        }
+
+        var bankingDetails = await _clientService.GetClientBankingDetails(clientId);
+
+        if (bankingDetails == null)
+            return NotFound("Banking details not found.");
+
+        return Ok(bankingDetails);
+    }
+
+
+    // Helper method
+    private Guid GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+            throw new UnauthorizedAccessException("User ID not found in token");
+
+        return Guid.Parse(userIdClaim);
     }
 }

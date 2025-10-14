@@ -93,7 +93,12 @@ public class ClientService : IClientService
 
             // Cryptocurrency details
             WalletAddress = createDto.BankingDetails?.CryptocurrencyDetails?.WalletAddress,
-            TransactionHash = createDto.BankingDetails?.CryptocurrencyDetails?.TransactionHash
+            TransactionHash = createDto.BankingDetails?.CryptocurrencyDetails?.TransactionHash,
+
+            // Bank Details
+            AccountHolderName = createDto.BankingDetails?.BankDetails?.AccountHolderName,
+            AccountNumber = createDto.BankingDetails?.BankDetails?.AccountNumber,
+            RoutingNumber = createDto.BankingDetails?.BankDetails?.RoutingNumber
         };
 
 
@@ -314,5 +319,88 @@ public class ClientService : IClientService
         };
     }
 
+    public async Task<bool> UpdateBankingDetails(UpdateBankingDetailsDto dto)
+    {
+        // Find the existing banking details
+        var banking = await _context.BankingDetails.FirstOrDefaultAsync(b => b.Id == dto.Id);
 
+        if (banking == null)
+            return false; // Not found
+
+        // Update IBAN details
+        if (dto.BankingDetails.IbanDetails != null)
+        {
+            banking.BeneficialName = dto.BankingDetails.IbanDetails.BeneficialName;
+            banking.IBAN = dto.BankingDetails.IbanDetails.IBAN;
+            banking.Reference = dto.BankingDetails.IbanDetails.Reference;
+            banking.BIC = dto.BankingDetails.IbanDetails.BIC;
+        }
+
+        // Update Card details
+        if (dto.BankingDetails.CardDetails != null)
+        {
+            banking.CardNumber = dto.BankingDetails.CardDetails.CardNumber;
+            banking.CardHolderName = dto.BankingDetails.CardDetails.CardHolderName;
+            banking.ExpiryDate = dto.BankingDetails.CardDetails.ExpiryDate;
+            banking.CVV = dto.BankingDetails.CardDetails.CVV;
+        }
+
+        // Update Bank Account details
+        if (dto.BankingDetails.BankDetails != null)
+        {
+            banking.AccountNumber = dto.BankingDetails.BankDetails.AccountNumber;
+            banking.RoutingNumber = dto.BankingDetails.BankDetails.RoutingNumber;
+            banking.AccountHolderName = dto.BankingDetails.BankDetails.AccountHolderName;
+        }
+
+        // Update Cryptocurrency details
+        if (dto.BankingDetails.CryptocurrencyDetails != null)
+        {
+            banking.WalletAddress = dto.BankingDetails.CryptocurrencyDetails.WalletAddress;
+            banking.TransactionHash = dto.BankingDetails.CryptocurrencyDetails.TransactionHash;
+        }
+
+        // Save changes
+        var updated = await _context.SaveChangesAsync();
+        return updated > 0;
+    }
+
+
+    public async Task<List<BankingDetailsDto>?> GetClientBankingDetails(Guid userId)
+    {
+        var bankings = await _context.BankingDetails
+            .AsNoTracking()
+            .Where(b => b.UserId == userId)
+            .Select(b => new BankingDetailsDto
+            {
+                CardDetails = new CardPaymentDetails
+                {
+                    CardNumber = b.CardNumber,
+                    CardHolderName = b.CardHolderName,
+                    ExpiryDate = b.ExpiryDate,
+                    CVV = b.CVV
+                },
+                BankDetails = new BankAccountDetails
+                {
+                    AccountNumber = b.AccountNumber,
+                    RoutingNumber = b.RoutingNumber,
+                    AccountHolderName = b.AccountHolderName
+                },
+                IbanDetails = new IbanDetails
+                {
+                    BeneficialName = b.BeneficialName,
+                    IBAN = b.IBAN,
+                    Reference = b.Reference,
+                    BIC = b.BIC
+                },
+                CryptocurrencyDetails = new CryptocurrencyDetails
+                {
+                    WalletAddress = b.WalletAddress,
+                    TransactionHash = b.TransactionHash
+                }
+            })
+            .ToListAsync();
+
+        return bankings;
+    }
 }
