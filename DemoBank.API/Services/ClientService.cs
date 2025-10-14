@@ -155,8 +155,9 @@ public class ClientService : IClientService
 
         var activeBalance = activeAccounts.Sum(a => a.Balance);
 
-        var monthlyReturn = Math.Round((activeBalance * request.MonthlyPercent) / 100, 2);
-        var yearlyReturn = Math.Round((activeBalance * request.YearlyPercent) / 100, 2);
+        var monthlyReturn = Math.Round((activeBalance * (decimal)request.MonthlyPercent) / 100m, 2);
+        var yearlyReturn = Math.Round((activeBalance * (decimal)request.YearlyPercent) / 100m, 2);
+
 
         var result = new List<ClientBankSummaryDto>
 {
