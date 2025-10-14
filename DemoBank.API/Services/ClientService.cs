@@ -220,4 +220,35 @@ public class ClientService : IClientService
         return clientInvestment;
     }
 
+    public async Task<ClientInvestmentResponse?> UpdateInvestmentAsync(UpdateClientInvestmentDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.AccountId))
+            return null;
+
+        var investment = await _context.ClientInvestment
+            .FirstOrDefaultAsync(x => x.AccountId == dto.AccountId);
+
+        if (investment == null)
+            return null;
+
+        investment.MonthlyReturn = dto.MonthlyReturn;
+        investment.YearlyReturn = dto.YearlyReturn;
+        investment.UserId = dto.UserId;
+        investment.CreatedAt = DateTime.UtcNow;
+
+        _context.ClientInvestment.Update(investment);
+        await _context.SaveChangesAsync();
+
+        return new ClientInvestmentResponse
+        {
+            Id = investment.Id,
+            UserId = investment.UserId,
+            MonthlyReturn = investment.MonthlyReturn,
+            YearlyReturn = investment.YearlyReturn,
+            AccountId = investment.AccountId,
+            CreatedAt = investment.CreatedAt
+        };
+    }
+
+
 }

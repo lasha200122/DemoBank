@@ -1,5 +1,6 @@
 ﻿using DemoBank.API.Services;
 using DemoBank.Core.DTOs;
+using DemoBank.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -58,6 +59,24 @@ public class ClientController : ControllerBase
         var clients = await _clientService.GetClientInvestmentAsync(AccountId);
         return Ok(clients);
     }
+
+    [HttpPut("UpdateInvestment")]
+    public async Task<IActionResult> UpdateInvestment([FromBody] UpdateClientInvestmentDto request)
+    {
+        if (string.IsNullOrWhiteSpace(request.AccountId))
+            return BadRequest("AccountId is required.");
+
+        var result = await _clientService.UpdateInvestmentAsync(request);
+
+        if (result == null)
+            return NotFound($"Investment record with AccountId {request.AccountId} not found.");
+
+        return Ok(ResponseDto<ClientInvestmentResponse>.SuccessResponse(
+            result,
+            "Client investment updated successfully"
+        ));
+    }
+
 
     [HttpPost("Banking-details")]
     public async Task<IActionResult> BankingDetails([FromBody] CreateBankingDetailsDto createDto)

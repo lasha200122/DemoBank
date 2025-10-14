@@ -12,4 +12,5 @@ public interface IClientService
     Task<bool> CreateBankingDetails(CreateBankingDetailsDto createDto);
     Task<List<ClientBankSummaryDto>> GetClientInvestmentSummaryAsync(CreateBankInvestmentDto request);
     Task<ClientInvestmentResponse?> GetClientInvestmentAsync(string accountId);
+    Task<ClientInvestmentResponse?> UpdateInvestmentAsync(UpdateClientInvestmentDto dto);
 }
