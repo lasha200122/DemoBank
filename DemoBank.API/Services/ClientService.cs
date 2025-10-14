@@ -198,13 +198,17 @@ public class ClientService : IClientService
         return result;
     }
 
-    public async Task<ClientInvestmentResponse?> GetClientInvestmentAsync(string accountId)
+    public async Task<List<ClientInvestmentResponse>> GetClientInvestmentAsync(Guid clientId, string? accountId)
     {
-        if (string.IsNullOrWhiteSpace(accountId))
-            return null;
+        var query = _context.ClientInvestment
+            .Where(u => u.UserId == clientId);
 
-        var clientInvestment = await _context.ClientInvestment
-            .Where(u => u.AccountId == accountId)
+        if (!string.IsNullOrWhiteSpace(accountId))
+        {
+            query = query.Where(u => u.AccountId == accountId);
+        }
+
+        var clientInvestments = await query
             .Select(u => new ClientInvestmentResponse
             {
                 Id = u.Id,
@@ -215,10 +219,11 @@ public class ClientService : IClientService
                 CreatedAt = u.CreatedAt
             })
             .AsNoTracking()
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
-        return clientInvestment;
+        return clientInvestments;
     }
+
 
     public async Task<ClientInvestmentResponse?> UpdateInvestmentAsync(UpdateClientInvestmentDto dto)
     {

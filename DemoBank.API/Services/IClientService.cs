@@ -11,6 +11,6 @@ public interface IClientService
     Task<bool> RejectClient(Guid userId);
     Task<bool> CreateBankingDetails(CreateBankingDetailsDto createDto);
     Task<List<ClientBankSummaryDto>> GetClientInvestmentSummaryAsync(CreateBankInvestmentDto request);
-    Task<ClientInvestmentResponse?> GetClientInvestmentAsync(string accountId);
+    Task<List<ClientInvestmentResponse>> GetClientInvestmentAsync(Guid clientId, string? accountId);
     Task<ClientInvestmentResponse?> UpdateInvestmentAsync(UpdateClientInvestmentDto dto);
 }

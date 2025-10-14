@@ -54,9 +54,9 @@ public class ClientController : ControllerBase
     }
 
     [HttpGet("GetInvestment")]
-    public async Task<IActionResult> GetClientInvestment(string AccountId)
+    public async Task<IActionResult> GetClientInvestment(Guid clientId, string? accountId)
     {
-        var clients = await _clientService.GetClientInvestmentAsync(AccountId);
+        var clients = await _clientService.GetClientInvestmentAsync(clientId, accountId);
         return Ok(clients);
     }
 
