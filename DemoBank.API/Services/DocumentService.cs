@@ -128,7 +128,7 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("Document has already been reviewed");
 
         document.Status = status;
-        document.RejectionReason = status == DocumentStatus.Rejected ? rejectionReason : null;
+        document.RejectionReason = status == DocumentStatus.Rejected ? rejectionReason : string.Empty;
         document.ReviewedBy = reviewerId;
         document.ReviewedAt = DateTime.UtcNow;
 
