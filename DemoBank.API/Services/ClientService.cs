@@ -74,6 +74,11 @@ public class ClientService : IClientService
         if (user == null)
             throw new InvalidOperationException("User not found");
 
+        var existingBankingDetails = await _context.BankingDetails.FirstOrDefaultAsync(b => b.UserId == createDto.UserId);
+
+        if (existingBankingDetails != null)
+            throw new InvalidOperationException("Banking details already exists");
+
         var bankingDetails = new BankingDetails
         {
             Id = Guid.NewGuid(),
@@ -139,8 +144,8 @@ public class ClientService : IClientService
             var monthlyReturnsUSD = activeAccounts
                 .Where(a => a.Currency == "USD")
                 .Join(clientInvestments,
-                      a => a.Id.ToString(),         
-                      ci => ci.AccountId, 
+                      a => a.Id.ToString(),
+                      ci => ci.AccountId,
                       (a, ci) => (a.Balance * ci.MonthlyReturn) / 100m)
                 .Sum();
 
@@ -188,40 +193,7 @@ public class ClientService : IClientService
                 MonthlyReturnsUSD = Math.Round(monthlyReturnsUSD, 2),
                 YearlyReturnsUSD = Math.Round(yearlyReturnsUSD, 2),
                 MonthlyReturnsEUR = Math.Round(monthlyReturnsEUR, 2),
-                YearlyReturnsEUR = Math.Round(yearlyReturnsEUR, 2),
-                BankingDetails = u.BankingDetails.Select(b => new BankingDetailsItemDto
-                {
-                    UserId = b.UserId,
-
-                    BankDetails = new BankAccountDetails
-                    {
-                        AccountHolderName = b.AccountHolderName,
-                        AccountNumber = b.AccountNumber,
-                        RoutingNumber = b.RoutingNumber
-                    },
-
-                    CardPaymentDetails = new CardPaymentDetails
-                    {
-                        CardHolderName = b.CardHolderName,
-                        CardNumber = b.CardNumber,
-                        CVV = b.CVV,
-                        ExpiryDate = b.ExpiryDate
-                    },
-
-                    CryptocurrencyDetails = new CryptocurrencyDetails
-                    {
-                        WalletAddress = b.WalletAddress,
-                        TransactionHash = b.TransactionHash
-                    },
-
-                    IbanDetails = new IbanDetails
-                    {
-                        BeneficialName = b.BeneficialName,
-                        IBAN = b.IBAN,
-                        Reference = b.Reference,
-                        BIC = b.BIC
-                    }
-                }).ToList()
+                YearlyReturnsEUR = Math.Round(yearlyReturnsEUR, 2)
             };
         }).ToList();
 
@@ -366,7 +338,7 @@ public class ClientService : IClientService
     }
 
 
-    public async Task<List<BankingDetailsDto>?> GetClientBankingDetails(Guid userId)
+    public async Task<BankingDetailsDto?> GetClientBankingDetails(Guid userId)
     {
         var bankings = await _context.BankingDetails
             .AsNoTracking()
@@ -400,7 +372,7 @@ public class ClientService : IClientService
                     TransactionHash = b.TransactionHash
                 }
             })
-            .ToListAsync();
+            .FirstOrDefaultAsync();
 
         return bankings;
     }

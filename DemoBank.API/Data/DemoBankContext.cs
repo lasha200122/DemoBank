@@ -464,9 +464,9 @@ public class DemoBankContext : DbContext
                 .HasMaxLength(12);
 
             entity.HasOne(e => e.User)
-                .WithMany(u => u.BankingDetails)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+              .WithOne(u => u.BankingDetails)
+              .HasForeignKey<BankingDetails>(e => e.UserId)
+              .OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<ClientInvestment>(entity =>
         {

@@ -28,16 +28,15 @@ namespace DemoBank.Core.DTOs
         public decimal MonthlyReturnsEUR { get; set; }
         public decimal YearlyReturnsEUR { get; set; }
 
-        public List<BankingDetailsItemDto> BankingDetails { get; set; } = new();
     }
 
-        public sealed class BankingDetailsItemDto
-        {
-            public Guid? UserId { get; set; }
-            public BankAccountDetails BankDetails { get; set; }
-            public CardPaymentDetails CardPaymentDetails { get; set; }
-            public CryptocurrencyDetails CryptocurrencyDetails { get; set; }
-            public IbanDetails IbanDetails { get; set; }
-        }
+        //public sealed class BankingDetailsItemDto
+        //{
+        //    public Guid? UserId { get; set; }
+        //    public BankAccountDetails BankDetails { get; set; }
+        //    public CardPaymentDetails CardPaymentDetails { get; set; }
+        //    public CryptocurrencyDetails CryptocurrencyDetails { get; set; }
+        //    public IbanDetails IbanDetails { get; set; }
+        //}
 
 }

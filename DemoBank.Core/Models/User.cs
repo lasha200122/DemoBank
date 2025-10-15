@@ -44,7 +44,7 @@ public class User
     public virtual UserSettings Settings { get; set; }
     public virtual ICollection<Investment> Investments { get; set; }
 
-    public virtual ICollection<BankingDetails> BankingDetails { get; set; }
+    public virtual BankingDetails BankingDetails { get; set; }
     public virtual ICollection<ClientInvestment> ClientInvestment { get; set; }
 
     public virtual ICollection<Invoice> Invoices { get; set; }

@@ -193,22 +193,10 @@ public class TopUpService : ITopUpService
         return PaymentMethod.BankTransfer;
     }
 
-    private static PaymentInstructionDto BuildInstructionFrom(List<BankingDetailsDto>? details, AccountTopUpDto dto)
+    private static PaymentInstructionDto BuildInstructionFrom(BankingDetailsDto details, AccountTopUpDto dto)
     {
-        if (details == null || details.Count == 0)
+        if (details == null)
             throw new ValidationException("No banking details found for the user.");
-
-        var d = dto.PaymentMethod switch
-        {
-            PaymentMethod.Iban => details.FirstOrDefault(x => x.IbanDetails != null),
-            PaymentMethod.BankTransfer => details.FirstOrDefault(x => x.BankDetails != null),
-            PaymentMethod.Crypto => details.FirstOrDefault(x => x.CryptocurrencyDetails != null),
-            PaymentMethod.CreditCard => details.FirstOrDefault(x => x.CardDetails != null),
-            _ => null
-        };
-
-        if (d is null)
-            throw new ValidationException($"No saved details match payment method: {dto.PaymentMethod}.");
 
         var pi = new PaymentInstructionDto
         {
@@ -219,8 +207,8 @@ public class TopUpService : ITopUpService
         {
             case PaymentMethod.Iban:
                 {
-                    var iban = d.IbanDetails
-                                ?? throw new ValidationException("IbanDetails is required for IBAN payment.");
+                    var iban = details.IbanDetails
+                               ?? throw new ValidationException("IbanDetails is required for IBAN payment.");
 
                     pi.BeneficialName = iban.BeneficialName;
                     pi.Iban = iban.IBAN;
@@ -231,14 +219,15 @@ public class TopUpService : ITopUpService
 
             case PaymentMethod.BankTransfer:
                 {
-                    _ = d.BankDetails ?? throw new ValidationException("BankDetails is required for bank transfer.");
+                    _ = details.BankDetails
+                        ?? throw new ValidationException("BankDetails is required for bank transfer.");
                     break;
                 }
 
             case PaymentMethod.Crypto:
                 {
-                    var crypto = d.CryptocurrencyDetails
-                                  ?? throw new ValidationException("CryptocurrencyDetails is required for crypto payment.");
+                    var crypto = details.CryptocurrencyDetails
+                                 ?? throw new ValidationException("CryptocurrencyDetails is required for crypto payment.");
 
                     pi.WalletAddress = crypto.WalletAddress;
                     pi.CryptoAmount = dto.Amount;
@@ -247,7 +236,8 @@ public class TopUpService : ITopUpService
 
             case PaymentMethod.CreditCard:
                 {
-                    _ = d.CardDetails ?? throw new ValidationException("CardDetails is required for card payment.");
+                    _ = details.CardDetails
+                        ?? throw new ValidationException("CardDetails is required for card payment.");
                     break;
                 }
 
@@ -257,6 +247,7 @@ public class TopUpService : ITopUpService
 
         return pi;
     }
+
     public async Task<TopUpResultDto> ProcessTopUpAsync(Guid userId, AccountTopUpDto topUpDto)
     {
         try
