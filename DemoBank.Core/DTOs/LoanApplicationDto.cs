@@ -10,11 +10,11 @@ namespace DemoBank.Core.DTOs;
 public class LoanApplicationDto
 {
     [Required]
-    [Range(1000, 100000)]
+    [Range(50000, 1_000_000)]
     public decimal Amount { get; set; }
 
     [Required]
-    [Range(6, 60)]
+    [Range(6, 72)]
     public int TermMonths { get; set; }
 
     [MaxLength(500)]

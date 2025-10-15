@@ -14,11 +14,11 @@ public class LoanService : ILoanService
     private readonly INotificationHelper _notificationHelper;
 
     // Loan configuration
-    private const decimal MIN_LOAN_AMOUNT = 1000;
-    private const decimal MAX_LOAN_AMOUNT = 100000;
+    private const decimal MIN_LOAN_AMOUNT = 50_000;
+    private const decimal MAX_LOAN_AMOUNT = 1_000_000;
     private const decimal BASE_INTEREST_RATE = 5.0m; // 5% base APR
     private const int MIN_TERM_MONTHS = 6;
-    private const int MAX_TERM_MONTHS = 60;
+    private const int MAX_TERM_MONTHS = 72;
     private const decimal LATE_PAYMENT_FEE = 25;
     private const int GRACE_PERIOD_DAYS = 5;
 
