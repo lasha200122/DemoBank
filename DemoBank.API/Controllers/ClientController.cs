@@ -106,6 +106,7 @@ public class ClientController : ControllerBase
                     ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)).ToList()
                 ));
             }
+            
             var account = await _clientService.CreateBankingDetails(createDto);
             if (!account) return NotFound(new { Message = "BankingDetails not found" });
             return Ok(new { Message = "BankingDetails Created Successfully" });
@@ -153,9 +154,6 @@ public class ClientController : ControllerBase
         }
 
         var bankingDetails = await _clientService.GetClientBankingDetails(clientId);
-
-        if (bankingDetails == null)
-            return NotFound("Banking details not found.");
 
         return Ok(bankingDetails);
     }
