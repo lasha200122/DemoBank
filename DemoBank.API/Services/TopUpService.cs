@@ -75,19 +75,36 @@ public class TopUpService : ITopUpService
     }
 
 
-    public async Task<List<TopUpListItemDto>> GetTopUpsAsync(Guid requesterId, bool isAdmin, string? status = null, int take = 100, CancellationToken ct = default)
+    public async Task<List<TopUpListItemDto>> GetTopUpsAsync(
+        Guid requesterId,
+        bool isAdmin,
+        string? status = null,
+        int take = 100,
+        CancellationToken ct = default,
+        Guid? targetUserId = null)
     {
-        var q = _context.Transactions.AsNoTracking().Where(t => t.Type == TransactionType.Deposit);
+        var q = _context.Transactions
+            .AsNoTracking()
+            .Where(t => t.Type == TransactionType.Deposit);
 
-        if (!isAdmin)
+        if (isAdmin && targetUserId.HasValue)
+        {
+            q = q.Join(_context.Accounts, t => t.AccountId, a => a.Id, (t, a) => new { t, a })
+                 .Where(x => x.a.UserId == targetUserId.Value)
+                 .Select(x => x.t);
+        }
+        else if (!isAdmin)
         {
             q = q.Join(_context.Accounts, t => t.AccountId, a => a.Id, (t, a) => new { t, a })
                  .Where(x => x.a.UserId == requesterId)
                  .Select(x => x.t);
         }
 
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<TransactionStatus>(status, true, out var st))
+        if (!string.IsNullOrWhiteSpace(status) &&
+            Enum.TryParse<TransactionStatus>(status, true, out var st))
+        {
             q = q.Where(t => t.Status == st);
+        }
 
         var list = await q.OrderByDescending(t => t.CreatedAt)
                           .Take(Math.Clamp(take, 1, 1000))

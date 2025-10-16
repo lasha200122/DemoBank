@@ -46,13 +46,19 @@ public class TopUpController : ControllerBase
     }
 
     [HttpGet("GetTopup")]
-    public async Task<IActionResult> List([FromQuery] string? status, [FromQuery] int take = 100, CancellationToken ct = default)
+    public async Task<IActionResult> List(
+        [FromQuery] string? status,
+        [FromQuery] Guid? userId,
+        [FromQuery] int take = 100,
+        CancellationToken ct = default)
     {
         var isAdmin = User.IsInRole("Admin");
-        var userId = GetCurrentUserId();
-        var res = await _topUpService.GetTopUpsAsync(userId, isAdmin, status, take, ct);
+        var currentUserId = GetCurrentUserId();
+
+        var res = await _topUpService.GetTopUpsAsync(currentUserId, isAdmin, status, take, ct, userId);
         return Ok(ResponseDto<List<TopUpListItemDto>>.SuccessResponse(res));
     }
+
 
     [HttpPut("{id:guid}/status")]
     public async Task<IActionResult> AdminUpdateStatus([FromRoute] Guid id, [FromQuery] string value, [FromQuery] string? reason, CancellationToken ct = default)

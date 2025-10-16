@@ -14,6 +14,12 @@ public interface ITopUpService
     Task<TopUpResultDto> ProcessPaymentAsync(AccountTopUpDto topUpDto);
 
     Task<TopUpRequestCreatedDto> CreatePendingTopUpAsync(Guid userId, AccountTopUpDto dto, CancellationToken ct = default);
-    Task<List<TopUpListItemDto>> GetTopUpsAsync(Guid requesterId, bool isAdmin, string? status = null, int take = 100, CancellationToken ct = default);
+    Task<List<TopUpListItemDto>> GetTopUpsAsync(
+       Guid requesterId,
+       bool isAdmin,
+       string? status = null,
+       int take = 100,
+       CancellationToken ct = default,
+       Guid? targetUserId = null);
     Task AdminUpdateStatusAsync(Guid adminId, Guid transactionId, string newStatus, string? reason = null, CancellationToken ct = default);
 }
