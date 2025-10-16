@@ -193,14 +193,18 @@ public class UserService : IUserService
 
         _context.Users.Update(user);
 
-        // Send notification
-        await _notificationHelper.CreateNotification(
-            userId,
-            "Password Changed",
-            "Your password has been changed successfully. If this wasn't you, please contact support immediately.",
-            NotificationType.Security
-        );
+        var success = await _context.SaveChangesAsync() > 0;
 
-        return await _context.SaveChangesAsync() > 0;
+        if (success)
+        {
+            await _notificationHelper.CreateNotification(
+                userId,
+                "Password Changed",
+                "Your password has been changed successfully. If this wasn't you, please contact support immediately.",
+                NotificationType.Security
+            );
+        }
+
+        return success;
     }
 }
