@@ -157,7 +157,7 @@ public class TransactionService : ITransactionService
             {
                 var settings = account.User.Settings;
                 throw new InvalidOperationException(
-                    $"Withdrawal would exceed daily limit of ${settings.DailyWithdrawalLimit:N2}"
+                    $"Withdrawal would exceed daily limit of €{settings.DailyWithdrawalLimit:N2}"
                 );
             }
 

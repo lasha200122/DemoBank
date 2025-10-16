@@ -259,7 +259,7 @@ public class TopUpService : ITopUpService
 
             // Validate amount
             if (topUpDto.Amount < MIN_TOPUP_AMOUNT || topUpDto.Amount > MAX_TOPUP_AMOUNT)
-                throw new InvalidOperationException($"Top-up amount must be between ${MIN_TOPUP_AMOUNT:N2} and ${MAX_TOPUP_AMOUNT:N2}");
+                throw new InvalidOperationException($"Top-up amount must be between €{MIN_TOPUP_AMOUNT:N2} and €{MAX_TOPUP_AMOUNT:N2}");
 
             // Validate currency
             var currency = await _currencyService.GetCurrencyAsync(topUpDto.Currency);
@@ -271,7 +271,7 @@ public class TopUpService : ITopUpService
             {
                 var limits = await GetTopUpLimitsAsync(userId);
                 throw new InvalidOperationException(
-                    $"Top-up would exceed limits. Daily remaining: ${limits.RemainingToday:N2}, Monthly remaining: ${limits.RemainingThisMonth:N2}");
+                    $"Top-up would exceed limits. Daily remaining: €{limits.RemainingToday:N2}, Monthly remaining: €{limits.RemainingThisMonth:N2}");
             }
 
             var paymentResult = await ProcessPaymentAsync(topUpDto);

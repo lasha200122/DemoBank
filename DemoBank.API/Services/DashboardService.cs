@@ -740,13 +740,13 @@ public class DashboardService : IDashboardService
         var netCashFlow = transactions.TotalDepositsEUR -
             (transactions.TotalWithdrawalsEUR + transactions.TotalTransfersEUR);
         if (netCashFlow > 0)
-            insights.Add($"Great job! You saved ${netCashFlow:N2} in the last 30 days.");
+            insights.Add($"Great job! You saved €{netCashFlow:N2} in the last 30 days.");
         else if (netCashFlow < 0)
-            insights.Add($"You spent ${Math.Abs(netCashFlow):N2} more than you earned last month.");
+            insights.Add($"You spent €{Math.Abs(netCashFlow):N2} more than you earned last month.");
 
         // Balance insight
         if (balance < 1000)
-            insights.Add("Consider building your emergency fund to at least $1,000.");
+            insights.Add("Consider building your emergency fund to at least €1,000.");
 
         // Loan insight
         if (loans.Any())

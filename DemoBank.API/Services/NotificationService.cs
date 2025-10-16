@@ -426,7 +426,7 @@ public class NotificationBackgroundService : BackgroundService
             {
                 UserId = loan.UserId,
                 Title = "Upcoming Loan Payment",
-                Message = $"Your loan payment of ${loan.MonthlyPayment:N2} is due on {loan.NextPaymentDate:yyyy-MM-dd}",
+                Message = $"Your loan payment of €{loan.MonthlyPayment:N2} is due on {loan.NextPaymentDate:yyyy-MM-dd}",
                 Type = NotificationType.Info.ToString()
             };
 

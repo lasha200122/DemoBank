@@ -38,7 +38,7 @@ public class LoanService : ILoanService
     {
         // Validate loan amount
         if (applicationDto.Amount < MIN_LOAN_AMOUNT || applicationDto.Amount > MAX_LOAN_AMOUNT)
-            throw new InvalidOperationException($"Loan amount must be between ${MIN_LOAN_AMOUNT:N0} and ${MAX_LOAN_AMOUNT:N0}");
+            throw new InvalidOperationException($"Loan amount must be between €{MIN_LOAN_AMOUNT:N0} and €{MAX_LOAN_AMOUNT:N0}");
 
         // Validate term
         if (applicationDto.TermMonths < MIN_TERM_MONTHS || applicationDto.TermMonths > MAX_TERM_MONTHS)
@@ -82,7 +82,7 @@ public class LoanService : ILoanService
         await _notificationHelper.CreateNotification(
             userId,
             "Loan Application Submitted",
-            $"Your loan application for ${applicationDto.Amount:N2} has been submitted and is under review.",
+            $"Your loan application for €{applicationDto.Amount:N2} has been submitted and is under review.",
             NotificationType.Info
         );
 
@@ -96,7 +96,7 @@ public class LoanService : ILoanService
             await _notificationHelper.CreateNotification(
                 admin.Id,
                 "New Loan Application",
-                $"New loan application for ${applicationDto.Amount:N2} requires review.",
+                $"New loan application for €{applicationDto.Amount:N2} requires review.",
                 NotificationType.Info
             );
         }
@@ -226,8 +226,8 @@ public class LoanService : ILoanService
             await _notificationHelper.CreateNotification(
                 loan.UserId,
                 "Loan Approved",
-                $"Your loan for ${loan.Amount:N2} has been approved and disbursed to account {disbursementAccount.AccountNumber}. " +
-                $"Monthly payment: ${loan.MonthlyPayment:N2}. First payment due: {loan.NextPaymentDate:yyyy-MM-dd}",
+                $"Your loan for €{loan.Amount:N2} has been approved and disbursed to account {disbursementAccount.AccountNumber}. " +
+                $"Monthly payment: €{loan.MonthlyPayment:N2}. First payment due: {loan.NextPaymentDate:yyyy-MM-dd}",
                 NotificationType.Success
             );
 
@@ -272,7 +272,7 @@ public class LoanService : ILoanService
         await _notificationHelper.CreateNotification(
             loan.UserId,
             "Loan Application Rejected",
-            $"Your loan application for ${loan.Amount:N2} has been rejected. Reason: {reason}",
+            $"Your loan application for €{loan.Amount:N2} has been rejected. Reason: {reason}",
             NotificationType.Warning
         );
 
@@ -444,7 +444,7 @@ public class LoanService : ILoanService
             // Send notification
             var message = loan.Status == LoanStatus.PaidOff
                 ? $"Congratulations! Your loan has been fully paid off."
-                : $"Payment of ${amount:N2} received. Remaining balance: ${loan.RemainingBalance:N2}";
+                : $"Payment of €{amount:N2} received. Remaining balance: ${loan.RemainingBalance:N2}";
 
             await _notificationHelper.CreateNotification(
                 userId,
@@ -572,12 +572,12 @@ public class LoanService : ILoanService
         };
 
 
-        // Check account balance (minimum $100 in any account)
+        // Check account balance (minimum €100 in any account)
         var totalBalance = user.Accounts.Where(a => a.IsActive).Sum(a => a.Balance);
         if (totalBalance < 100)
         {
             eligibility.IsEligible = false;
-            eligibility.Reasons.Add("Minimum account balance of $100 required");
+            eligibility.Reasons.Add("Minimum account balance of €100 required");
         }
 
         // Simulate credit score (600-850)

@@ -255,8 +255,8 @@ public class TopUpController : ControllerBase
                     "Amount exceeds available limits",
                     new List<string>
                     {
-                        $"Daily remaining: ${limits.RemainingToday:N2}",
-                        $"Monthly remaining: ${limits.RemainingThisMonth:N2}"
+                        $"Daily remaining: €{limits.RemainingToday:N2}",
+                        $"Monthly remaining: €{limits.RemainingThisMonth:N2}"
                     }
                 ));
             }

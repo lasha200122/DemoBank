@@ -227,7 +227,7 @@ public class TransferService : ITransferService
             {
                 var settings = fromAccount.User.Settings;
                 throw new InvalidOperationException(
-                    $"Transfer would exceed daily limit of ${settings.DailyTransferLimit:N2}"
+                    $"Transfer would exceed daily limit of €{settings.DailyTransferLimit:N2}"
                 );
             }
 
@@ -469,7 +469,7 @@ public class TransferService : ITransferService
             if (!isWithinLimit)
             {
                 result.IsValid = false;
-                result.Errors.Add($"Transfer would exceed daily limit of ${fromAccount.User.Settings.DailyTransferLimit:N2}");
+                result.Errors.Add($"Transfer would exceed daily limit of €{fromAccount.User.Settings.DailyTransferLimit:N2}");
             }
         }
 
