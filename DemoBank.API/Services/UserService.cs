@@ -95,7 +95,7 @@ public class UserService : IUserService
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
-            PreferredCurrency = "USD",
+            PreferredCurrency = "EUR",
             Language = "en",
             EmailNotifications = true,
             SmsNotifications = false,
@@ -117,7 +117,7 @@ public class UserService : IUserService
                 AccountNumber = AccountNumberGenerator.GenerateAccountNumber(),
                 UserId = user.Id,
                 Type = AccountType.Checking,
-                Currency = "USD",
+                Currency = "EUR",
                 Balance = 0,
                 IsPriority = false,
                 IsActive = true,
