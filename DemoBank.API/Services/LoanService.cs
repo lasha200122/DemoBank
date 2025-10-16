@@ -518,7 +518,11 @@ public class LoanService : ILoanService
         {
             TotalLoans = loans.Count,
             ActiveLoans = activeLoans.Count,
-            TotalBorrowed = loans.Sum(l => l.Amount),
+            TotalBorrowed = loans.Where(l => 
+                l.Status == LoanStatus.Active || 
+                l.Status == LoanStatus.Approved || 
+                l.Status == LoanStatus.PaidOff ||
+                l.Status == LoanStatus.Defaulted).Sum(l => l.Amount),
             TotalPaid = loans.Sum(l => l.TotalPaid),
             TotalRemaining = activeLoans.Sum(l => l.RemainingBalance),
             MonthlyPaymentsDue = activeLoans.Sum(l => l.MonthlyPayment),
