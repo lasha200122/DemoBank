@@ -17,6 +17,7 @@ public interface IAccountService
     Task<bool> SetPriorityAccountAsync(Guid userId, Guid accountId, string currency);
     Task<Account> GetPriorityAccountAsync(Guid userId, string currency);
     Task<decimal> GetTotalBalanceInUSDAsync(Guid userId);
+    Task<decimal> GetTotalBalanceInEURAsync(Guid userId);
     Task<Dictionary<string, decimal>> GetBalancesByCurrencyAsync(Guid userId);
     Task<bool> UserOwnsAccountAsync(Guid userId, Guid accountId);
     Task<List<Transaction>> GetAccountTransactionsAsync(Guid accountId, int limit = 10);

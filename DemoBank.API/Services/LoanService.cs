@@ -189,8 +189,8 @@ public class LoanService : ILoanService
             }
             else
             {
-                // Use user's primary USD account
-                disbursementAccount = await _accountService.GetPriorityAccountAsync(loan.UserId, "USD");
+                // Use user's primary EUR account
+                disbursementAccount = await _accountService.GetPriorityAccountAsync(loan.UserId, "EUR");
             }
 
             if (disbursementAccount == null)
@@ -207,7 +207,7 @@ public class LoanService : ILoanService
                 AccountId = disbursementAccount.Id,
                 Type = TransactionType.Deposit,
                 Amount = loan.Amount,
-                Currency = "USD",
+                Currency = "EUR",
                 AmountInAccountCurrency = loan.Amount,
                 Description = $"Loan disbursement - Loan #{loan.Id.ToString().Substring(0, 8)}",
                 BalanceAfter = disbursementAccount.Balance,
@@ -370,11 +370,11 @@ public class LoanService : ILoanService
             if (amount <= 0)
                 throw new InvalidOperationException("Payment amount must be positive");
 
-            // Get user's priority USD account
-            var paymentAccount = await _accountService.GetPriorityAccountAsync(userId, "USD");
+            // Get user's priority EUR account
+            var paymentAccount = await _accountService.GetPriorityAccountAsync(userId, "EUR");
 
             if (paymentAccount == null)
-                throw new InvalidOperationException("No USD account found for payment");
+                throw new InvalidOperationException("No EUR account found for payment");
 
             if (paymentAccount.Balance < amount)
                 throw new InvalidOperationException("Insufficient balance for loan payment");
@@ -429,7 +429,7 @@ public class LoanService : ILoanService
                 AccountId = paymentAccount.Id,
                 Type = TransactionType.LoanPayment,
                 Amount = amount,
-                Currency = "USD",
+                Currency = "EUR",
                 AmountInAccountCurrency = amount,
                 Description = $"Loan payment - Loan #{loan.Id.ToString().Substring(0, 8)}",
                 BalanceAfter = paymentAccount.Balance,

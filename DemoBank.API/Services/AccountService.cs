@@ -256,6 +256,27 @@ public class AccountService : IAccountService
         return totalInUSD;
     }
 
+    public async Task<decimal> GetTotalBalanceInEURAsync(Guid userId)
+    {
+        var accounts = await GetActiveUserAccountsAsync(userId);
+        decimal totalInEUR = 0;
+
+        foreach (var account in accounts)
+        {
+            if (account.Currency == "EUR")
+            {
+                totalInEUR += account.Balance;
+            }
+            else
+            {
+                var rate = await _currencyService.GetExchangeRateAsync(account.Currency, "EUR");
+                totalInEUR += account.Balance * rate;
+            }
+        }
+
+        return totalInEUR;
+    }
+
     public async Task<Dictionary<string, decimal>> GetBalancesByCurrencyAsync(Guid userId)
     {
         var accounts = await GetActiveUserAccountsAsync(userId);

@@ -159,7 +159,7 @@ public class SettingsService : ISettingsService
             VerificationStatus = "Verified", // Simulated
             AccountsCount = accountCount,
             TransactionsCount = transactionCount,
-            PreferredCurrency = user.Settings?.PreferredCurrency ?? "USD",
+            PreferredCurrency = user.Settings?.PreferredCurrency ?? "EUR",
             Language = user.Settings?.Language ?? "en",
             TimeZone = "UTC" // Would be stored in settings
         };
@@ -578,7 +578,7 @@ public class SettingsService : ISettingsService
             MinimumAge = 18,
             MaxTransferLimit = 1000000,
             MaxWithdrawalLimit = 500000,
-            DefaultCurrency = "USD",
+            DefaultCurrency = "EUR",
             SupportedCurrencies = await _context.Currencies
                 .Where(c => c.IsActive)
                 .Select(c => c.Code)
@@ -628,7 +628,7 @@ public class SettingsService : ISettingsService
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            PreferredCurrency = "USD",
+            PreferredCurrency = "EUR",
             Language = "en",
             EmailNotifications = true,
             SmsNotifications = false,

@@ -8,9 +8,9 @@ namespace DemoBank.Core.DTOs;
 
 public class TransactionSummaryDto
 {
-    public decimal TotalDepositsUSD { get; set; }
-    public decimal TotalWithdrawalsUSD { get; set; }
-    public decimal TotalTransfersUSD { get; set; }
+    public decimal TotalDepositsEUR { get; set; }
+    public decimal TotalWithdrawalsEUR { get; set; }
+    public decimal TotalTransfersEUR { get; set; }
     public int DepositCount { get; set; }
     public int WithdrawalCount { get; set; }
     public int TransferCount { get; set; }

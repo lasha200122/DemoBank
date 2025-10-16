@@ -215,15 +215,15 @@ public class TransferService : ITransferService
                 throw new InvalidOperationException($"Insufficient balance. Available: {fromAccount.Balance:N2}");
 
             // Check daily transfer limit
-            var amountInUSD = fromAccount.Currency == "USD"
+            var amountInEUR = fromAccount.Currency == "EUR"
                 ? amountInFromCurrency
                 : await _currencyService.ConvertCurrencyAsync(
                     amountInFromCurrency,
                     fromAccount.Currency,
-                    "USD"
+                    "EUR"
                 );
 
-            if (!await _transactionService.ValidateTransferLimitAsync(fromUserId, amountInUSD))
+            if (!await _transactionService.ValidateTransferLimitAsync(fromUserId, amountInEUR))
             {
                 var settings = fromAccount.User.Settings;
                 throw new InvalidOperationException(
@@ -457,13 +457,13 @@ public class TransferService : ITransferService
         // Check daily limit (only for external transfers)
         if (fromAccount.UserId != toAccount.UserId)
         {
-            var amountInUSD = fromAccount.Currency == "USD"
+            var amountInEUR = fromAccount.Currency == "EUR"
                 ? amount
-                : await _currencyService.ConvertCurrencyAsync(amount, fromAccount.Currency, "USD");
+                : await _currencyService.ConvertCurrencyAsync(amount, fromAccount.Currency, "EUR");
 
             var isWithinLimit = await _transactionService.ValidateTransferLimitAsync(
                 fromAccount.UserId,
-                amountInUSD
+                amountInEUR
             );
 
             if (!isWithinLimit)
@@ -531,34 +531,34 @@ public class TransferService : ITransferService
         // Calculate sent
         foreach (var transfer in transfers)
         {
-            var amountInUSD = transfer.Currency == "USD"
+            var amountInEUR = transfer.Currency == "EUR"
                 ? transfer.Amount
                 : await _currencyService.ConvertCurrencyAsync(
-                    transfer.Amount, transfer.Currency, "USD");
+                    transfer.Amount, transfer.Currency, "EUR");
 
-            totalSent += amountInUSD;
+            totalSent += amountInEUR;
             sentCount++;
         }
 
         // Calculate received
         foreach (var transfer in receivedTransfers)
         {
-            var amountInUSD = transfer.Currency == "USD"
+            var amountInEUR = transfer.Currency == "EUR"
                 ? transfer.Amount
                 : await _currencyService.ConvertCurrencyAsync(
-                    transfer.Amount, transfer.Currency, "USD");
+                    transfer.Amount, transfer.Currency, "EUR");
 
-            totalReceived += amountInUSD;
+            totalReceived += amountInEUR;
             receivedCount++;
         }
 
         return new TransferStatisticsDto
         {
-            TotalSentUSD = totalSent,
-            TotalReceivedUSD = totalReceived,
+            TotalSentEUR = totalSent,
+            TotalReceivedEUR = totalReceived,
             SentCount = sentCount,
             ReceivedCount = receivedCount,
-            NetTransferUSD = totalReceived - totalSent,
+            NetTransferEUR = totalReceived - totalSent,
             StartDate = startDate,
             EndDate = endDate
         };

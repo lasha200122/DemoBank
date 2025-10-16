@@ -282,7 +282,7 @@ public class AccountController : ControllerBase
         {
             var userId = GetCurrentUserId();
 
-            var totalInUSD = await _accountService.GetTotalBalanceInUSDAsync(userId);
+            var totalInEUR = await _accountService.GetTotalBalanceInEURAsync(userId);
             var balancesByCurrency = await _accountService.GetBalancesByCurrencyAsync(userId);
             var accounts = await _accountService.GetActiveUserAccountsAsync(userId);
 
@@ -326,7 +326,7 @@ public class AccountController : ControllerBase
 
             var summary = new AccountSummaryDto
             {
-                TotalBalanceUSD = totalInUSD,
+                TotalBalanceEUR = totalInEUR,
                 BalancesByCurrency = balancesByCurrency,
                 TotalAccounts = accounts.Count,
                 ActiveAccounts = accounts.Count(a => a.IsActive),

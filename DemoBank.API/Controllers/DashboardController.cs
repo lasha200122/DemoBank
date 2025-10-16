@@ -43,7 +43,7 @@ public class DashboardController : ControllerBase
 
             // Get accounts summary
             var accounts = await _accountService.GetActiveUserAccountsAsync(userId);
-            var totalBalanceUSD = await _accountService.GetTotalBalanceInUSDAsync(userId);
+            var totalBalanceEUR = await _accountService.GetTotalBalanceInEURAsync(userId);
             var balancesByCurrency = await _accountService.GetBalancesByCurrencyAsync(userId);
 
             // Get recent transactions (last 10)
@@ -79,12 +79,12 @@ public class DashboardController : ControllerBase
                     Name = $"{user.FirstName} {user.LastName}",
                     Email = user.Email,
                     Role = user.Role.ToString(),
-                    PreferredCurrency = user.Settings?.PreferredCurrency ?? "USD"
+                    PreferredCurrency = user.Settings?.PreferredCurrency ?? "EUR"
                 },
                 AccountSummary = new DashboardAccountSummaryDto
                 {
                     TotalAccounts = accounts.Count,
-                    TotalBalanceUSD = totalBalanceUSD,
+                    TotalBalanceEUR = totalBalanceEUR,
                     BalancesByCurrency = balancesByCurrency,
                     Accounts = _mapper.Map<List<AccountDto>>(accounts.Take(3)) // Show top 3 accounts
                 },
@@ -132,13 +132,13 @@ public class DashboardController : ControllerBase
         {
             var userId = GetCurrentUserId();
 
-            var totalBalance = await _accountService.GetTotalBalanceInUSDAsync(userId);
+            var totalBalance = await _accountService.GetTotalBalanceInEURAsync(userId);
             var accounts = await _accountService.GetActiveUserAccountsAsync(userId);
             var todayStats = await GetTodayStatistics(userId);
 
             var quickStats = new QuickStatsDto
             {
-                TotalBalanceUSD = totalBalance,
+                TotalBalanceEUR = totalBalance,
                 ActiveAccounts = accounts.Count,
                 TodayTransactions = todayStats.TotalCount,
                 LastTransactionTime = todayStats.LastTransactionTime
@@ -188,9 +188,9 @@ public class DashboardController : ControllerBase
                 StartDate = startDate,
                 EndDate = endDate,
                 TotalTransactions = summary.TotalTransactions,
-                TotalDeposits = summary.TotalDepositsUSD,
-                TotalWithdrawals = summary.TotalWithdrawalsUSD,
-                TotalTransfers = summary.TotalTransfersUSD,
+                TotalDeposits = summary.TotalDepositsEUR,
+                TotalWithdrawals = summary.TotalWithdrawalsEUR,
+                TotalTransfers = summary.TotalTransfersEUR,
                 Transactions = _mapper.Map<List<TransactionDto>>(recentTransactions)
             };
 
@@ -216,20 +216,20 @@ public class DashboardController : ControllerBase
 
         foreach (var trans in todayOnly)
         {
-            var amountUSD = trans.Currency == "USD"
+            var amountEUR = trans.Currency == "EUR"
                 ? trans.Amount
-                : await _currencyService.ConvertCurrencyAsync(trans.Amount, trans.Currency, "USD");
+                : await _currencyService.ConvertCurrencyAsync(trans.Amount, trans.Currency, "EUR");
 
             switch (trans.Type)
             {
                 case Core.Models.TransactionType.Deposit:
-                    deposits += amountUSD;
+                    deposits += amountEUR;
                     break;
                 case Core.Models.TransactionType.Withdrawal:
-                    withdrawals += amountUSD;
+                    withdrawals += amountEUR;
                     break;
                 case Core.Models.TransactionType.Transfer:
-                    transfers += amountUSD;
+                    transfers += amountEUR;
                     break;
             }
         }

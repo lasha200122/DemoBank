@@ -26,7 +26,7 @@ public class DashboardUserDto
 public class DashboardAccountSummaryDto
 {
     public int TotalAccounts { get; set; }
-    public decimal TotalBalanceUSD { get; set; }
+    public decimal TotalBalanceEUR { get; set; }
     public Dictionary<string, decimal> BalancesByCurrency { get; set; }
     public List<AccountDto> Accounts { get; set; }
 }
@@ -60,7 +60,7 @@ public class DashboardLimitsDto
 
 public class QuickStatsDto
 {
-    public decimal TotalBalanceUSD { get; set; }
+    public decimal TotalBalanceEUR { get; set; }
     public int ActiveAccounts { get; set; }
     public int TodayTransactions { get; set; }
     public DateTime? LastTransactionTime { get; set; }

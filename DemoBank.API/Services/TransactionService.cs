@@ -145,15 +145,15 @@ public class TransactionService : ITransactionService
                 throw new InvalidOperationException("Insufficient balance");
 
             // Check daily withdrawal limit
-            var amountInUSD = account.Currency == "USD"
+            var amountInEUR = account.Currency == "EUR"
                 ? amountInAccountCurrency
                 : await _currencyService.ConvertCurrencyAsync(
                     amountInAccountCurrency,
                     account.Currency,
-                    "USD"
+                    "EUR"
                 );
 
-            if (!await ValidateWithdrawalLimitAsync(account.UserId, amountInUSD))
+            if (!await ValidateWithdrawalLimitAsync(account.UserId, amountInEUR))
             {
                 var settings = account.User.Settings;
                 throw new InvalidOperationException(
@@ -194,9 +194,9 @@ public class TransactionService : ITransactionService
             );
 
             // Send warning if balance is low
-            if (account.Balance < 100 && account.Currency == "USD" ||
-                (account.Currency != "USD" && await _currencyService.ConvertCurrencyAsync(
-                    account.Balance, account.Currency, "USD") < 100))
+            if (account.Balance < 100 && account.Currency == "EUR" ||
+                (account.Currency != "EUR" && await _currencyService.ConvertCurrencyAsync(
+                    account.Balance, account.Currency, "EUR") < 100))
             {
                 await _notificationHelper.CreateNotification(
                     account.UserId,
@@ -263,26 +263,26 @@ public class TransactionService : ITransactionService
                        t.CreatedAt < endOfDay)
             .ToListAsync();
 
-        decimal totalInUSD = 0;
+        decimal totalInEUR = 0;
 
         foreach (var trans in transactions)
         {
-            if (trans.Currency == "USD")
+            if (trans.Currency == "EUR")
             {
-                totalInUSD += trans.Amount;
+                totalInEUR += trans.Amount;
             }
             else
             {
-                var amountInUSD = await _currencyService.ConvertCurrencyAsync(
+                var amountInEUR = await _currencyService.ConvertCurrencyAsync(
                     trans.Amount,
                     trans.Currency,
-                    "USD"
+                    "EUR"
                 );
-                totalInUSD += amountInUSD;
+                totalInEUR += amountInEUR;
             }
         }
 
-        return totalInUSD;
+        return totalInEUR;
     }
 
     public async Task<decimal> GetDailyTransferTotalAsync(Guid userId, DateTime date)
@@ -299,29 +299,29 @@ public class TransactionService : ITransactionService
                        t.CreatedAt < endOfDay)
             .ToListAsync();
 
-        decimal totalInUSD = 0;
+        decimal totalInEUR = 0;
 
         foreach (var trans in transactions)
         {
-            if (trans.Currency == "USD")
+            if (trans.Currency == "EUR")
             {
-                totalInUSD += trans.Amount;
+                totalInEUR += trans.Amount;
             }
             else
             {
-                var amountInUSD = await _currencyService.ConvertCurrencyAsync(
+                var amountInEUR = await _currencyService.ConvertCurrencyAsync(
                     trans.Amount,
                     trans.Currency,
-                    "USD"
+                    "EUR"
                 );
-                totalInUSD += amountInUSD;
+                totalInEUR += amountInEUR;
             }
         }
 
-        return totalInUSD;
+        return totalInEUR;
     }
 
-    public async Task<bool> ValidateWithdrawalLimitAsync(Guid userId, decimal amountInUSD)
+    public async Task<bool> ValidateWithdrawalLimitAsync(Guid userId, decimal amountInEUR)
     {
         var userSettings = await _context.UserSettings
             .FirstOrDefaultAsync(s => s.UserId == userId);
@@ -331,10 +331,10 @@ public class TransactionService : ITransactionService
 
         var dailyTotal = await GetDailyWithdrawalTotalAsync(userId, DateTime.UtcNow);
 
-        return (dailyTotal + amountInUSD) <= userSettings.DailyWithdrawalLimit;
+        return (dailyTotal + amountInEUR) <= userSettings.DailyWithdrawalLimit;
     }
 
-    public async Task<bool> ValidateTransferLimitAsync(Guid userId, decimal amountInUSD)
+    public async Task<bool> ValidateTransferLimitAsync(Guid userId, decimal amountInEUR)
     {
         var userSettings = await _context.UserSettings
             .FirstOrDefaultAsync(s => s.UserId == userId);
@@ -344,7 +344,7 @@ public class TransactionService : ITransactionService
 
         var dailyTotal = await GetDailyTransferTotalAsync(userId, DateTime.UtcNow);
 
-        return (dailyTotal + amountInUSD) <= userSettings.DailyTransferLimit;
+        return (dailyTotal + amountInEUR) <= userSettings.DailyTransferLimit;
     }
 
     public async Task<TransactionSummaryDto> GetTransactionSummaryAsync(
@@ -373,23 +373,23 @@ public class TransactionService : ITransactionService
 
         foreach (var trans in transactions)
         {
-            decimal amountInUSD = trans.Currency == "USD"
+            decimal amountInEUR = trans.Currency == "EUR"
                 ? trans.Amount
                 : await _currencyService.ConvertCurrencyAsync(
-                    trans.Amount, trans.Currency, "USD");
+                    trans.Amount, trans.Currency, "EUR");
 
             switch (trans.Type)
             {
                 case TransactionType.Deposit:
-                    totalDeposits += amountInUSD;
+                    totalDeposits += amountInEUR;
                     depositCount++;
                     break;
                 case TransactionType.Withdrawal:
-                    totalWithdrawals += amountInUSD;
+                    totalWithdrawals += amountInEUR;
                     withdrawalCount++;
                     break;
                 case TransactionType.Transfer:
-                    totalTransfers += amountInUSD;
+                    totalTransfers += amountInEUR;
                     transferCount++;
                     break;
             }
@@ -397,9 +397,9 @@ public class TransactionService : ITransactionService
 
         return new TransactionSummaryDto
         {
-            TotalDepositsUSD = totalDeposits,
-            TotalWithdrawalsUSD = totalWithdrawals,
-            TotalTransfersUSD = totalTransfers,
+            TotalDepositsEUR = totalDeposits,
+            TotalWithdrawalsEUR = totalWithdrawals,
+            TotalTransfersEUR = totalTransfers,
             DepositCount = depositCount,
             WithdrawalCount = withdrawalCount,
             TransferCount = transferCount,
@@ -421,10 +421,10 @@ public class TransactionService : ITransactionService
 
         return new Dictionary<string, decimal>
         {
-            ["TotalDeposits"] = summary.TotalDepositsUSD,
-            ["TotalWithdrawals"] = summary.TotalWithdrawalsUSD,
-            ["TotalTransfers"] = summary.TotalTransfersUSD,
-            ["NetCashFlow"] = summary.TotalDepositsUSD - summary.TotalWithdrawalsUSD - summary.TotalTransfersUSD
+            ["TotalDeposits"] = summary.TotalDepositsEUR,
+            ["TotalWithdrawals"] = summary.TotalWithdrawalsEUR,
+            ["TotalTransfers"] = summary.TotalTransfersEUR,
+            ["NetCashFlow"] = summary.TotalDepositsEUR - summary.TotalWithdrawalsEUR - summary.TotalTransfersEUR
         };
     }
 }

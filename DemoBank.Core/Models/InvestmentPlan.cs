@@ -39,7 +39,7 @@ public class InvestmentPlan
     public decimal EarlyWithdrawalPenalty { get; set; } // Percentage
 
     [MaxLength(3)]
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "EUR";
 
     // Risk metrics
     public RiskLevel RiskLevel { get; set; }

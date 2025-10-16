@@ -9,7 +9,7 @@ public class CreateAccountDto
 
     [Required]
     [MaxLength(3)]
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "EUR";
 
     public string Title { get; set; }
 

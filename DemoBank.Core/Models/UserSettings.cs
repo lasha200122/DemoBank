@@ -10,7 +10,7 @@ public class UserSettings
     public Guid UserId { get; set; }
 
     [MaxLength(3)]
-    public string PreferredCurrency { get; set; } = "USD";
+    public string PreferredCurrency { get; set; } = "EUR";
 
     [MaxLength(10)]
     public string Language { get; set; } = "en";

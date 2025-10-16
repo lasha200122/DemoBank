@@ -10,7 +10,7 @@ public interface IInvestmentCalculatorService
         int termMonths,
         decimal annualROI,
         PayoutFrequency frequency,
-        string currency = "USD"
+        string currency = "EUR"
     );
 
     Task<Dictionary<string, InvestmentCalculatorResultDto>> CompareInvestmentPlansAsync(

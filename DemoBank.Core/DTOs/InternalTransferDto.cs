@@ -106,11 +106,11 @@ public class TransferValidationResult
 
 public class TransferStatisticsDto
 {
-    public decimal TotalSentUSD { get; set; }
-    public decimal TotalReceivedUSD { get; set; }
+    public decimal TotalSentEUR { get; set; }
+    public decimal TotalReceivedEUR { get; set; }
     public int SentCount { get; set; }
     public int ReceivedCount { get; set; }
-    public decimal NetTransferUSD { get; set; }
+    public decimal NetTransferEUR { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
 }

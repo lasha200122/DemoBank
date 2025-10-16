@@ -13,5 +13,5 @@ public class MakeLoanPaymentDto
     [Range(0.01, double.MaxValue)]
     public decimal Amount { get; set; }
 
-    public Guid? AccountId { get; set; } // Optional, will use priority USD account if not specified
+    public Guid? AccountId { get; set; } // Optional, will use priority EUR account if not specified
 }

@@ -23,7 +23,7 @@
 
         // Quick stats
         public int AccountCount { get; set; }
-        public decimal TotalBalanceUSD { get; set; }
+        public decimal TotalBalanceEUR { get; set; }
         public int ActiveLoans { get; set; }
         public int ActiveInvestments { get; set; }
     }
@@ -74,7 +74,7 @@
         public int TotalAccounts { get; set; }
         public int ActiveAccounts { get; set; }
         public List<AccountSummaryItemDto> Accounts { get; set; }
-        public decimal TotalBalanceUSD { get; set; }
+        public decimal TotalBalanceEUR { get; set; }
         public Dictionary<string, decimal> BalancesByCurrency { get; set; }
         public string PrimaryCurrency { get; set; }
     }
@@ -94,17 +94,17 @@
     public class ClientFinancialSummaryDto
     {
         // Assets
-        public decimal TotalAssetsUSD { get; set; }
+        public decimal TotalAssetsEUR { get; set; }
         public decimal TotalDeposits { get; set; }
         public decimal TotalInvestments { get; set; }
 
         // Liabilities
-        public decimal TotalLiabilitiesUSD { get; set; }
+        public decimal TotalLiabilitiesEUR { get; set; }
         public decimal TotalLoanBalance { get; set; }
         public decimal TotalCreditUsed { get; set; }
 
         // Net Worth
-        public decimal NetWorthUSD { get; set; }
+        public decimal NetWorthEUR { get; set; }
 
         // Income/Expense
         public decimal MonthlyIncome { get; set; }

@@ -436,23 +436,23 @@ public class TopUpService : ITopUpService
                      && EF.Functions.ILike(t.Description!, "%top-up%"))
             .ToListAsync();
 
-        // Calculate totals in USD
+        // Calculate totals in EUR
         decimal todayTotal = 0;
         foreach (var topUp in todayTopUps)
         {
-            if (topUp.Currency == "USD")
+            if (topUp.Currency == "EUR")
                 todayTotal += topUp.Amount;
             else
-                todayTotal += await _currencyService.ConvertCurrencyAsync(topUp.Amount, topUp.Currency, "USD");
+                todayTotal += await _currencyService.ConvertCurrencyAsync(topUp.Amount, topUp.Currency, "EUR");
         }
 
         decimal monthlyTotal = 0;
         foreach (var topUp in monthlyTopUps)
         {
-            if (topUp.Currency == "USD")
+            if (topUp.Currency == "EUR")
                 monthlyTotal += topUp.Amount;
             else
-                monthlyTotal += await _currencyService.ConvertCurrencyAsync(topUp.Amount, topUp.Currency, "USD");
+                monthlyTotal += await _currencyService.ConvertCurrencyAsync(topUp.Amount, topUp.Currency, "EUR");
         }
 
         return new TopUpLimitsDto
@@ -472,10 +472,10 @@ public class TopUpService : ITopUpService
     {
         var limits = await GetTopUpLimitsAsync(userId);
 
-        // Convert amount to USD if needed
-        decimal amountInUSD = amount; // Assuming amount is already in USD for simplicity
+        // Convert amount to EUR if needed
+        decimal amountInEUR = amount; // Assuming amount is already in EUR for simplicity
 
-        return amountInUSD <= limits.RemainingToday && amountInUSD <= limits.RemainingThisMonth;
+        return amountInEUR <= limits.RemainingToday && amountInEUR <= limits.RemainingThisMonth;
     }
 
     public async Task<PaymentValidationResultDto> ValidatePaymentMethodAsync(ValidatePaymentMethodDto validationDto)

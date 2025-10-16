@@ -84,7 +84,7 @@ public class DashboardService : IDashboardService
 
         // Get all the necessary data
         var accounts = await _accountService.GetActiveUserAccountsAsync(userId);
-        var totalBalanceUSD = await _accountService.GetTotalBalanceInUSDAsync(userId);
+        var totalBalanceEUR = await _accountService.GetTotalBalanceInEURAsync(userId);
         var balancesByCurrency = await _accountService.GetBalancesByCurrencyAsync(userId);
 
         // Get transaction statistics for the last 30 days
@@ -106,10 +106,10 @@ public class DashboardService : IDashboardService
             userId, previousMonth.AddDays(-30), previousMonth);
 
         decimal balanceTrend = 0;
-        if (previousMonthSummary.TotalDepositsUSD > 0)
+        if (previousMonthSummary.TotalDepositsEUR > 0)
         {
-            balanceTrend = ((transactionSummary.TotalDepositsUSD - previousMonthSummary.TotalDepositsUSD)
-                / previousMonthSummary.TotalDepositsUSD) * 100;
+            balanceTrend = ((transactionSummary.TotalDepositsEUR - previousMonthSummary.TotalDepositsEUR)
+                / previousMonthSummary.TotalDepositsEUR) * 100;
         }
 
         // Get notifications
@@ -124,7 +124,7 @@ public class DashboardService : IDashboardService
 
         // Calculate financial score
         var financialScore = CalculateFinancialScore(
-            totalBalanceUSD,
+            totalBalanceEUR,
             transactionSummary,
             activeLoans.Count,
             accounts.Count);
@@ -137,13 +137,13 @@ public class DashboardService : IDashboardService
                 Email = user.Email,
                 MemberSince = user.CreatedAt,
                 LastLogin = DateTime.UtcNow,
-                PreferredCurrency = user.Settings?.PreferredCurrency ?? "USD"
+                PreferredCurrency = user.Settings?.PreferredCurrency ?? "EUR"
             },
             AccountsSummary = new EnhancedAccountSummaryDto
             {
                 TotalAccounts = accounts.Count,
                 ActiveAccounts = accounts.Count(a => a.IsActive),
-                TotalBalanceUSD = totalBalanceUSD,
+                TotalBalanceEUR = totalBalanceEUR,
                 BalancesByCurrency = balancesByCurrency,
                 BalanceTrend = balanceTrend,
                 PrimaryAccount = accounts.FirstOrDefault(a => a.IsPriority)?.AccountNumber,
@@ -157,13 +157,13 @@ public class DashboardService : IDashboardService
                 Last30Days = new PeriodMetricsDto
                 {
                     TotalTransactions = transactionSummary.TotalTransactions,
-                    TotalIncome = transactionSummary.TotalDepositsUSD,
-                    TotalExpenses = transactionSummary.TotalWithdrawalsUSD + transactionSummary.TotalTransfersUSD,
-                    NetCashFlow = transactionSummary.TotalDepositsUSD -
-                        (transactionSummary.TotalWithdrawalsUSD + transactionSummary.TotalTransfersUSD),
+                    TotalIncome = transactionSummary.TotalDepositsEUR,
+                    TotalExpenses = transactionSummary.TotalWithdrawalsEUR + transactionSummary.TotalTransfersEUR,
+                    NetCashFlow = transactionSummary.TotalDepositsEUR -
+                        (transactionSummary.TotalWithdrawalsEUR + transactionSummary.TotalTransfersEUR),
                     AverageTransactionSize = transactionSummary.TotalTransactions > 0 ?
-                        (transactionSummary.TotalDepositsUSD + transactionSummary.TotalWithdrawalsUSD +
-                         transactionSummary.TotalTransfersUSD) / transactionSummary.TotalTransactions : 0
+                        (transactionSummary.TotalDepositsEUR + transactionSummary.TotalWithdrawalsEUR +
+                         transactionSummary.TotalTransfersEUR) / transactionSummary.TotalTransactions : 0
                 }
             },
             PendingItems = new PendingItemsDto
@@ -189,7 +189,7 @@ public class DashboardService : IDashboardService
             }).ToList(),
             UnreadNotifications = unreadNotifications.Count,
             FinancialScore = financialScore,
-            Insights = GenerateInsights(transactionSummary, totalBalanceUSD, activeLoans)
+            Insights = GenerateInsights(transactionSummary, totalBalanceEUR, activeLoans)
         };
     }
 
@@ -302,7 +302,7 @@ public class DashboardService : IDashboardService
                 Title = "Loan Payment",
                 Description = $"Payment for loan #{payment.LoanId.ToString().Substring(0, 8)}",
                 Amount = payment.Amount,
-                Currency = "USD",
+                Currency = "EUR",
                 Icon = "loan",
                 Timestamp = payment.PaymentDate,
                 Status = "Completed"
@@ -458,7 +458,7 @@ public class DashboardService : IDashboardService
     public async Task<FinancialHealthDto> GetFinancialHealthAsync(Guid userId)
     {
         var accounts = await _accountService.GetActiveUserAccountsAsync(userId);
-        var totalBalance = await _accountService.GetTotalBalanceInUSDAsync(userId);
+        var totalBalance = await _accountService.GetTotalBalanceInEURAsync(userId);
 
         var threeMonthsAgo = DateTime.UtcNow.AddMonths(-3);
         var transactionSummary = await _transactionService.GetTransactionSummaryAsync(
@@ -468,9 +468,9 @@ public class DashboardService : IDashboardService
         var activeLoans = loans.Where(l => l.Status == "Active").ToList();
 
         // Calculate metrics
-        var monthlyIncome = transactionSummary.TotalDepositsUSD / 3;
-        var monthlyExpenses = (transactionSummary.TotalWithdrawalsUSD +
-                              transactionSummary.TotalTransfersUSD) / 3;
+        var monthlyIncome = transactionSummary.TotalDepositsEUR / 3;
+        var monthlyExpenses = (transactionSummary.TotalWithdrawalsEUR +
+                              transactionSummary.TotalTransfersEUR) / 3;
         var savingsRate = monthlyIncome > 0 ?
             ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0;
 
@@ -532,17 +532,17 @@ public class DashboardService : IDashboardService
             if (!categories.ContainsKey(category))
                 categories[category] = 0;
 
-            var amountUSD = transaction.Currency == "USD" ? transaction.Amount :
+            var amountEUR = transaction.Currency == "EUR" ? transaction.Amount :
                 await _currencyService.ConvertCurrencyAsync(
-                    transaction.Amount, transaction.Currency, "USD");
+                    transaction.Amount, transaction.Currency, "EUR");
 
-            categories[category] += amountUSD;
+            categories[category] += amountEUR;
 
             // Simulate merchant data
             var merchant = $"Merchant_{Random.Shared.Next(1, 20)}";
             if (!merchants.ContainsKey(merchant))
                 merchants[merchant] = 0;
-            merchants[merchant] += amountUSD;
+            merchants[merchant] += amountEUR;
         }
 
         var totalSpending = categories.Values.Sum();
@@ -584,7 +584,7 @@ public class DashboardService : IDashboardService
                 Id = Guid.NewGuid(),
                 Name = "Emergency Fund",
                 TargetAmount = 10000,
-                CurrentAmount = await _accountService.GetTotalBalanceInUSDAsync(userId) * 0.3m,
+                CurrentAmount = await _accountService.GetTotalBalanceInEURAsync(userId) * 0.3m,
                 TargetDate = DateTime.UtcNow.AddMonths(6),
                 Category = "Savings"
             },
@@ -665,11 +665,11 @@ public class DashboardService : IDashboardService
             var categoryList = categories.Keys.ToList();
             var category = categoryList[Random.Shared.Next(categoryList.Count)];
 
-            var amountUSD = transaction.Currency == "USD" ? transaction.Amount :
+            var amountEUR = transaction.Currency == "EUR" ? transaction.Amount :
                 await _currencyService.ConvertCurrencyAsync(
-                    transaction.Amount, transaction.Currency, "USD");
+                    transaction.Amount, transaction.Currency, "EUR");
 
-            categories[category] += amountUSD;
+            categories[category] += amountEUR;
         }
 
         return categories;
@@ -688,8 +688,8 @@ public class DashboardService : IDashboardService
         else if (totalBalance >= 500) score += 50;
 
         // Cash flow factor (up to 150 points)
-        var netCashFlow = transactions.TotalDepositsUSD -
-            (transactions.TotalWithdrawalsUSD + transactions.TotalTransfersUSD);
+        var netCashFlow = transactions.TotalDepositsEUR -
+            (transactions.TotalWithdrawalsEUR + transactions.TotalTransfersEUR);
         if (netCashFlow > 0) score += Math.Min(150, (int)(netCashFlow / 100));
 
         // Loan factor (up to 100 points)
@@ -737,8 +737,8 @@ public class DashboardService : IDashboardService
         var insights = new List<string>();
 
         // Cash flow insight
-        var netCashFlow = transactions.TotalDepositsUSD -
-            (transactions.TotalWithdrawalsUSD + transactions.TotalTransfersUSD);
+        var netCashFlow = transactions.TotalDepositsEUR -
+            (transactions.TotalWithdrawalsEUR + transactions.TotalTransfersEUR);
         if (netCashFlow > 0)
             insights.Add($"Great job! You saved ${netCashFlow:N2} in the last 30 days.");
         else if (netCashFlow < 0)

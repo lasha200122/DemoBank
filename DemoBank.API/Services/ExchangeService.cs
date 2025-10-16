@@ -15,7 +15,7 @@ public class ExchangeService : IExchangeService
 
     // Exchange fee percentage (e.g., 0.5% = 0.005)
     private const decimal EXCHANGE_FEE_RATE = 0.005m;
-    private const decimal MIN_EXCHANGE_FEE = 0.50m; // Minimum fee in USD
+    private const decimal MIN_EXCHANGE_FEE = 0.50m; // Minimum fee in EUR
 
     public ExchangeService(
         DemoBankContext context,
@@ -100,17 +100,17 @@ public class ExchangeService : IExchangeService
 
             // Calculate fee
             var feeAmount = amountBeforeFee * EXCHANGE_FEE_RATE;
-            var feeInUSD = toAccount.Currency == "USD"
+            var feeInEUR = toAccount.Currency == "EUR"
                 ? feeAmount
-                : await _currencyService.ConvertCurrencyAsync(feeAmount, toAccount.Currency, "USD");
+                : await _currencyService.ConvertCurrencyAsync(feeAmount, toAccount.Currency, "EUR");
 
             // Apply minimum fee
-            if (feeInUSD < MIN_EXCHANGE_FEE)
+            if (feeInEUR < MIN_EXCHANGE_FEE)
             {
-                feeInUSD = MIN_EXCHANGE_FEE;
-                feeAmount = toAccount.Currency == "USD"
+                feeInEUR = MIN_EXCHANGE_FEE;
+                feeAmount = toAccount.Currency == "EUR"
                     ? MIN_EXCHANGE_FEE
-                    : await _currencyService.ConvertCurrencyAsync(MIN_EXCHANGE_FEE, "USD", toAccount.Currency);
+                    : await _currencyService.ConvertCurrencyAsync(MIN_EXCHANGE_FEE, "EUR", toAccount.Currency);
             }
 
             var amountAfterFee = amountBeforeFee - feeAmount;
@@ -240,17 +240,17 @@ public class ExchangeService : IExchangeService
 
         // Calculate fee
         var feeAmount = convertedAmount * EXCHANGE_FEE_RATE;
-        var feeInUSD = toCurrency.ToUpper() == "USD"
+        var feeInEUR = toCurrency.ToUpper() == "EUR"
             ? feeAmount
-            : await _currencyService.ConvertCurrencyAsync(feeAmount, toCurrency, "USD");
+            : await _currencyService.ConvertCurrencyAsync(feeAmount, toCurrency, "EUR");
 
         // Apply minimum fee
-        if (feeInUSD < MIN_EXCHANGE_FEE)
+        if (feeInEUR < MIN_EXCHANGE_FEE)
         {
-            feeInUSD = MIN_EXCHANGE_FEE;
-            feeAmount = toCurrency.ToUpper() == "USD"
+            feeInEUR = MIN_EXCHANGE_FEE;
+            feeAmount = toCurrency.ToUpper() == "EUR"
                 ? MIN_EXCHANGE_FEE
-                : await _currencyService.ConvertCurrencyAsync(MIN_EXCHANGE_FEE, "USD", toCurrency);
+                : await _currencyService.ConvertCurrencyAsync(MIN_EXCHANGE_FEE, "EUR", toCurrency);
         }
 
         var amountAfterFee = convertedAmount - feeAmount;
@@ -582,17 +582,17 @@ public class ExchangeService : IExchangeService
         var convertedAmount = await _currencyService.ConvertCurrencyAsync(amount, fromCurrency, toCurrency);
         var feeAmount = convertedAmount * EXCHANGE_FEE_RATE;
 
-        var feeInUSD = toCurrency.ToUpper() == "USD"
+        var feeInEUR = toCurrency.ToUpper() == "EUR"
             ? feeAmount
-            : await _currencyService.ConvertCurrencyAsync(feeAmount, toCurrency, "USD");
+            : await _currencyService.ConvertCurrencyAsync(feeAmount, toCurrency, "EUR");
 
         // Apply minimum fee
-        if (feeInUSD < MIN_EXCHANGE_FEE)
+        if (feeInEUR < MIN_EXCHANGE_FEE)
         {
-            feeInUSD = MIN_EXCHANGE_FEE;
-            feeAmount = toCurrency.ToUpper() == "USD"
+            feeInEUR = MIN_EXCHANGE_FEE;
+            feeAmount = toCurrency.ToUpper() == "EUR"
                 ? MIN_EXCHANGE_FEE
-                : await _currencyService.ConvertCurrencyAsync(MIN_EXCHANGE_FEE, "USD", toCurrency);
+                : await _currencyService.ConvertCurrencyAsync(MIN_EXCHANGE_FEE, "EUR", toCurrency);
         }
 
         return new ExchangeFeeDto
@@ -601,7 +601,7 @@ public class ExchangeService : IExchangeService
             FeeCurrency = toCurrency.ToUpper(),
             FeePercentage = EXCHANGE_FEE_RATE * 100,
             MinimumFee = MIN_EXCHANGE_FEE,
-            IsMinimumApplied = feeInUSD <= MIN_EXCHANGE_FEE
+            IsMinimumApplied = feeInEUR <= MIN_EXCHANGE_FEE
         };
     }
 

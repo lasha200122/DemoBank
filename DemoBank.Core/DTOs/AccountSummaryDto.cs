@@ -8,7 +8,7 @@ namespace DemoBank.Core.DTOs;
 
 public class AccountSummaryDto
 {
-    public decimal TotalBalanceUSD { get; set; }
+    public decimal TotalBalanceEUR { get; set; }
     public Dictionary<string, decimal> BalancesByCurrency { get; set; }
     public int TotalAccounts { get; set; }
     public int ActiveAccounts { get; set; }

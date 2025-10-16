@@ -189,7 +189,7 @@ public class InvoiceService : IInvoiceService
                 paymentAccount = await _accountService.GetPriorityAccountAsync(userId, invoice.Currency);
                 if (paymentAccount == null)
                 {
-                    paymentAccount = await _accountService.GetPriorityAccountAsync(userId, "USD");
+                    paymentAccount = await _accountService.GetPriorityAccountAsync(userId, "EUR");
                 }
             }
 

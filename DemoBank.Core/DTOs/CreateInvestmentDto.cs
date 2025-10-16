@@ -13,7 +13,7 @@ public class CreateInvestmentDto
 
     [Required]
     [MaxLength(3)]
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "EUR";
 
     [Required]
     public int TermMonths { get; set; }
@@ -106,7 +106,7 @@ public class InvestmentCalculatorDto
     public PayoutFrequency PayoutFrequency { get; set; } = PayoutFrequency.Monthly;
 
     [MaxLength(3)]
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "EUR";
 }
 
 public class InvestmentCalculatorResultDto
@@ -262,7 +262,7 @@ public class CreateInvestmentPlanDto
     public string RiskLevel { get; set; }
 
     [MaxLength(3)]
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = "EUR";
 
     public List<TierRateDto> TierRates { get; set; }
 }

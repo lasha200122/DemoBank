@@ -28,7 +28,7 @@ public class InvestmentCalculatorService : IInvestmentCalculatorService
         int termMonths,
         decimal annualROI,
         PayoutFrequency frequency,
-        string currency = "USD")
+        string currency = "EUR")
     {
         return await Task.Run(() =>
         {
