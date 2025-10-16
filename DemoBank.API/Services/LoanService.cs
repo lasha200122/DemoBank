@@ -51,12 +51,14 @@ public class LoanService : ILoanService
             throw new InvalidOperationException($"Loan application denied: {string.Join(", ", eligibility.Reasons)}");
 
         // Calculate interest rate based on credit score and amount
-        var interestRate = CalculateInterestRate(applicationDto.Amount, applicationDto.TermMonths, eligibility.CreditScore);
+
+        //var interestRate = CalculateInterestRate(applicationDto.Amount, applicationDto.TermMonths, eligibility.CreditScore);
 
         // Calculate monthly payment
         var monthlyPayment = await CalculateMonthlyPaymentAsync(
             applicationDto.Amount,
-            interestRate,
+            //interestRate,
+            3,
             applicationDto.TermMonths
         );
 
@@ -66,7 +68,7 @@ public class LoanService : ILoanService
             Id = Guid.NewGuid(),
             UserId = userId,
             Amount = applicationDto.Amount,
-            InterestRate = interestRate,
+            InterestRate = 3,
             TermMonths = applicationDto.TermMonths,
             MonthlyPayment = monthlyPayment,
             TotalPaid = 0,
