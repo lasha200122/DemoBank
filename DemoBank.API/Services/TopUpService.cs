@@ -37,12 +37,11 @@ public class TopUpService : ITopUpService
         _logger = logger;
         _clientService = clientService;
     }
+
     public async Task<TopUpRequestCreatedDto> CreatePendingTopUpAsync(Guid userId, AccountTopUpDto dto, CancellationToken ct = default)
     {
         var acc = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == dto.AccountId, ct)
                   ?? throw new InvalidOperationException("Account not found");
-        //if (acc.UserId != userId) throw new UnauthorizedAccessException("You don't own this account");
-        //if (!acc.IsActive) throw new InvalidOperationException("Account is not active");
 
         if (await _currencyService.GetCurrencyAsync(dto.Currency) is null)
             throw new InvalidOperationException($"Currency {dto.Currency} is not supported");
@@ -74,6 +73,7 @@ public class TopUpService : ITopUpService
             PaymentInstruction = instruction
         };
     }
+
 
     public async Task<List<TopUpListItemDto>> GetTopUpsAsync(Guid requesterId, bool isAdmin, string? status = null, int take = 100, CancellationToken ct = default)
     {
@@ -193,10 +193,10 @@ public class TopUpService : ITopUpService
         return PaymentMethod.BankTransfer;
     }
 
-    private static PaymentInstructionDto BuildInstructionFrom(BankingDetailsDto details, AccountTopUpDto dto)
+    private static PaymentInstructionDto? BuildInstructionFrom(BankingDetailsDto? details, AccountTopUpDto dto)
     {
         if (details == null)
-            throw new ValidationException("No banking details found for the user.");
+            return null;
 
         var pi = new PaymentInstructionDto
         {
@@ -206,47 +206,38 @@ public class TopUpService : ITopUpService
         switch (dto.PaymentMethod)
         {
             case PaymentMethod.Iban:
-                {
-                    var iban = details.IbanDetails
-                               ?? throw new ValidationException("IbanDetails is required for IBAN payment.");
+                var iban = details.IbanDetails;
+                if (iban == null) return null;
 
-                    pi.BeneficialName = iban.BeneficialName;
-                    pi.Iban = iban.IBAN;
-                    pi.Reference = iban.Reference;
-                    pi.Bic = iban.BIC;
-                    break;
-                }
+                pi.BeneficialName = iban.BeneficialName;
+                pi.Iban = iban.IBAN;
+                pi.Reference = iban.Reference;
+                pi.Bic = iban.BIC;
+                break;
 
             case PaymentMethod.BankTransfer:
-                {
-                    _ = details.BankDetails
-                        ?? throw new ValidationException("BankDetails is required for bank transfer.");
-                    break;
-                }
+                if (details.BankDetails == null) return null;
+                break;
 
             case PaymentMethod.Crypto:
-                {
-                    var crypto = details.CryptocurrencyDetails
-                                 ?? throw new ValidationException("CryptocurrencyDetails is required for crypto payment.");
+                var crypto = details.CryptocurrencyDetails;
+                if (crypto == null) return null;
 
-                    pi.WalletAddress = crypto.WalletAddress;
-                    pi.CryptoAmount = dto.Amount;
-                    break;
-                }
+                pi.WalletAddress = crypto.WalletAddress;
+                pi.CryptoAmount = dto.Amount;
+                break;
 
             case PaymentMethod.CreditCard:
-                {
-                    _ = details.CardDetails
-                        ?? throw new ValidationException("CardDetails is required for card payment.");
-                    break;
-                }
+                if (details.CardDetails == null) return null;
+                break;
 
             default:
-                throw new ValidationException("Unsupported payment method.");
+                return null;
         }
 
         return pi;
     }
+
 
     public async Task<TopUpResultDto> ProcessTopUpAsync(Guid userId, AccountTopUpDto topUpDto)
     {

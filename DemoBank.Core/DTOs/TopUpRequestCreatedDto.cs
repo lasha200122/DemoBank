@@ -13,6 +13,6 @@ namespace DemoBank.Core.DTOs
         public decimal Amount { get; set; }
         public string Currency { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
-        public PaymentInstructionDto PaymentInstruction { get; set; }
+        public PaymentInstructionDto? PaymentInstruction { get; set; }
     }
 }

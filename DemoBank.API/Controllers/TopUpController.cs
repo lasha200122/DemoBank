@@ -24,12 +24,25 @@ public class TopUpController : ControllerBase
         _accountService = accountService;
         _logger = logger;
     }
+
     [HttpPost("CreateTopup")]
     public async Task<IActionResult> Create([FromBody] AccountTopUpDto dto, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
         var res = await _topUpService.CreatePendingTopUpAsync(userId, dto, ct);
-        return Ok(ResponseDto<TopUpRequestCreatedDto>.SuccessResponse(res, "Top-up request created (Pending)"));
+
+        if (res.PaymentInstruction == null)
+        {
+            return Ok(ResponseDto<object>.SuccessResponse(
+                res,
+                "Top-up request was created. Please contact support for banking details."
+            ));
+        }
+
+        return Ok(ResponseDto<TopUpRequestCreatedDto>.SuccessResponse(
+            res,
+            "Top-up request created (Pending)"
+        ));
     }
 
     [HttpGet("GetTopup")]
