@@ -149,7 +149,7 @@ public class DemoBankContext : DbContext
                 .HasColumnType("decimal(5,2)");
 
             entity.Property(e => e.MonthlyPayment)
-                .HasColumnType("decimal(18,2)");
+                .HasColumnType("decimal(18,6)");
 
             entity.Property(e => e.TotalPaid)
                 .HasColumnType("decimal(18,2)");
